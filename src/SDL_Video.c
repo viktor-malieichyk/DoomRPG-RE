@@ -51,7 +51,7 @@ void SDL_InitVideo(void)
 	sdlVideo.fullScreen = false;
 	sdlVideo.vSync = false;
 	sdlVideo.integerScaling = true;
-	sdlVideo.resolutionIndex = 8;
+	sdlVideo.resolutionIndex = SDL_DEFAULT_VIDEO_MODE;
 	sdlVideo.displaySoftKeys = true;
 
 	Game_loadConfig(NULL);

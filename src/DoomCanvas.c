@@ -2477,7 +2477,7 @@ void DoomCanvas_legalsState(DoomCanvas_t* doomCanvas) {
 
 void DoomCanvas_menuState(DoomCanvas_t* doomCanvas)
 {
-	if (doomCanvas->doomRpg->menuSystem->menu >= MENU_INGAME) {
+	if (doomCanvas->doomRpg->menuSystem->menu >= MENU_INGAME && doomCanvas->doomRpg->menuSystem->menu != MENU_RESOLUTION) {
 		Hud_drawTopBar(doomCanvas->hud);
 		Hud_drawBottomBar(doomCanvas->hud);
 	}
@@ -3000,7 +3000,7 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 			DoomRPG_setClipFalse(doomCanvas->doomRpg);
 		}
 
-		if (doomCanvas->doomRpg->menuSystem->menu >= MENU_INGAME) {
+		if (doomCanvas->doomRpg->menuSystem->menu >= MENU_INGAME && doomCanvas->doomRpg->menuSystem->menu != MENU_RESOLUTION) {
 			Hud_drawTopBar(doomCanvas->hud);
 			Hud_drawBottomBar(doomCanvas->hud);
 			DoomCanvas_restoreSoftKeys(doomCanvas);

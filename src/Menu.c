@@ -17,6 +17,7 @@
 #include "SDL_Video.h"
 #include "Controls.h"
 #include "VideoOptions.h"
+#include "ResolutionMenu.h"
 #include "TextFields.h"
 
 #define MAXSTORES 4
@@ -1883,6 +1884,10 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 
 
 		// NEW MENU OPTIONS
+        case MENU_RESOLUTION:
+        case MENU_INGAME_RESOLUTION:
+            return ResolutionMenu_select(menuSystem, itemId);
+
 		case MENU_VIDEO:
 		case MENU_INGAME_VIDEO:
 
@@ -1905,13 +1910,9 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 
 				SDL_RenderSetIntegerScale(sdlVideo.renderer, sdlVideo.integerScaling);
 			}
-			else if (itemId == 5) { // New resolution Option
-                int next = (sdlVideo.resolutionIndex + 1) % SDL_VIDEO_MODE_COUNT;
-                if (!VideoOptions_resolution(menu->doomRpg, next))
-                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Video settings", SDL_GetError(), sdlVideo.window);
-				SDL_snprintf(text, sizeof(text), "(%dx%d)", sdlVideoModes[sdlVideo.resolutionIndex].width, sdlVideoModes[sdlVideo.resolutionIndex].height);
-				strncpy(menuSystem->items[itemId].textField, text, sizeof(menuSystem->items[itemId].textField));
-			}
+            else if (itemId == 5) {
+                return menuId == MENU_INGAME_VIDEO ? MENU_INGAME_RESOLUTION : MENU_RESOLUTION;
+            }
 			else if (itemId == 7) { // New display SoftKeys Option
 				sdlVideo.displaySoftKeys ^= true;
 				strncpy(menuSystem->items[itemId].textField2, sdlVideo.displaySoftKeys ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));

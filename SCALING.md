@@ -7,7 +7,11 @@ console when needed.
 ## Video and text
 
 Video Options offers the original resolutions plus 960x540, 1280x720, 1600x900,
-1920x1080, 2560x1440, and 3840x2160. Selection applies immediately, resizing
+1920x1080, 2560x1440, and 3840x2160. Open the resolution submenu and select
+a specific size with arrows/D-pad/left stick and Enter/A; Escape/B cancels.
+The current size is preselected and marked with an asterisk. New profiles and
+invalid saved modes default to 640x480; valid saved choices are retained.
+Selection applies immediately, resizing
 the native framebuffer and interface layout without restarting or reloading
 the game. Existing saved resolution indices remain valid.
 
@@ -40,7 +44,8 @@ Use the upstream CMake build with SDL2, SDL2_mixer, zlib and FluidSynth
 Windows development packages. C99 is required. Release builds use the GUI
 subsystem by default; enable DOOMRPG_SHOW_CONSOLE for a debug console.
 
-The optional `build.sh` helper cross-compiles with MinGW and links the SDL2,
+The optional `build.sh` helper cross-compiles with MinGW, embeds the original
+appicon.ico through appicon.rc, and links the SDL2,
 SDL2_mixer, FluidSynth and zlib DLLs in a separately supplied game directory.
 It does not download or redistribute game assets or dependency binaries.
 For a Homebrew-based cross-build:
@@ -52,7 +57,8 @@ GAME_DIR=/path/to/game ZLIB_INCLUDE_DIR=/path/to/zlib/headers TEST_UI=1 sh build
 
 The zlib headers directory must contain zlib.h and zconf.h. The helper detects
 Homebrew's prefix; DEPS_PREFIX, DEPS_INCLUDE_DIR and SDL2_INCLUDE_DIR override
-header locations. CC selects the compiler and OUTPUT_DIR selects the output
+header locations. CC selects the compiler, WINDRES selects the Windows resource compiler, and
+OUTPUT_DIR selects the output
 directory (default: GAME_DIR). The helper produces DoomRPG-scaled.exe or
 DoomRPG-ui-test.exe. Copy the release to DoomRPG.exe in the game directory and
 use Play.cmd there if desired.
@@ -85,3 +91,7 @@ Escape/Start/Enter cannot trigger the next screen. Main-menu labels share a
 left anchor; option labels and values use separate columns with reserved spacing.
 Regression checks hold Escape, Start and Enter across transitions for 60 frames;
 all passed. Main and Options screenshots were reviewed at 320x240 and 1280x720.
+
+Binary releases provide a patch executable and a ZIP containing the executable,
+launcher, license and installation notes. Apply these to an existing working
+Windows port folder; original game assets and dependency DLLs are not bundled.

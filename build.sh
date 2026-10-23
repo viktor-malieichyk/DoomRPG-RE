@@ -28,7 +28,10 @@ if [ "${TEST_UI:-0}" = 1 ]; then
   set -- "$@" tests/ui_scaling.c tests/controls_tests.c tests/video_tests.c
   output=$output_dir/DoomRPG-ui-test.exe
 else
-  set -- "$@" -mwindows src/*.c
+  windres=${WINDRES:-${compiler%gcc}windres}
+  mkdir -p build/windows
+  "$windres" -Isrc -i src/appicon.rc -o build/windows/appicon.o
+  set -- "$@" -mwindows src/*.c build/windows/appicon.o
   output=$output_dir/DoomRPG-scaled.exe
 fi
 mkdir -p "$output_dir"

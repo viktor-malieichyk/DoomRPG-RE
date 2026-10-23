@@ -4,6 +4,9 @@ This fork adds live widescreen resolutions through 4K, scalable UI and compact
 dialogue text, a gamepad-friendly controls editor, console-free Windows builds,
 and menu input/alignment fixes. See [Windows changes and build notes](SCALING.md).
 
+[Download the Windows release](https://github.com/viktor-malieichyk/DoomRPG-RE/releases/latest).
+The build includes a resolution picker, 640x480 defaults and the original icon.
+
 Original project and credits follow. Game data is not included.
 
 ![image](https://github.com/Erick194/DoomRPG-RE/assets/41172072/258e99d9-b122-4cbe-8659-2fd0f4105068)<br />

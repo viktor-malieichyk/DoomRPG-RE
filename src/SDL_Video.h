@@ -63,6 +63,7 @@ typedef struct SDLVidModes_s
 	int width, height;
 } SDLVidModes_t;
 
+#define SDL_DEFAULT_VIDEO_MODE 12 /* 640x480; saved indices stay unchanged. */
 #define SDL_VIDEO_MODE_COUNT 20
 extern SDLVidModes_t sdlVideoModes[SDL_VIDEO_MODE_COUNT];
 

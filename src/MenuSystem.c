@@ -14,6 +14,7 @@
 #include "Sound.h"
 #include "SDL_Video.h"
 #include "Controls.h"
+#include "ResolutionMenu.h"
 
 MenuSystem_t* MenuSystem_init(MenuSystem_t* menuSystem, DoomRPG_t* doomRpg)
 {
@@ -238,6 +239,10 @@ void MenuSystem_moveDir(MenuSystem_t* menuSystem, int i)
 
 void MenuSystem_paint(MenuSystem_t* menuSystem)
 {
+    if (ResolutionMenu_isMenu(menuSystem->menu)) {
+        ResolutionMenu_paint(menuSystem);
+        return;
+    }
     if (Controls_isMenu(menuSystem->menu)) {
         Controls_paint(menuSystem);
         return;
@@ -559,6 +564,14 @@ void MenuSystem_setMenu(MenuSystem_t* menuSystem, int menu)
         menuSystem->lastInputKey = 0;
         menuSystem->doomRpg->doomCanvas->numEvents = 0;
     }
+    boolean leavingResolution = ResolutionMenu_isMenu(menuSystem->menu);
+    if (leavingResolution) menuSystem->menu = menuSystem->oldMenu;
+    if (ResolutionMenu_isMenu(menu)) {
+        menuSystem->menu = menu;
+        ResolutionMenu_init(menuSystem);
+        DoomCanvas_setState(menuSystem->doomRpg->doomCanvas, ST_MENU);
+        return;
+    }
 	MenuItem_t* item;
 	menuSystem->cheatCombo = 0;
 	menuSystem->digitCount = 0;
@@ -622,6 +635,11 @@ void MenuSystem_setMenu(MenuSystem_t* menuSystem, int menu)
 		Menu_initMenu(menuSystem->doomRpg->menu, menu);
 		menuSystem->maxItems = menuSystem->doomRpg->doomCanvas->screenRect.h / 12;
 
+        if (leavingResolution && (menu == MENU_VIDEO || menu == MENU_INGAME_VIDEO)) {
+            menuSystem->selectedIndex = 5;
+            menuSystem->maxItems = SDL_max(1, (menuSystem->type == 7 ? menuSystem->doomRpg->doomCanvas->displayRect.h - 80 : menuSystem->doomRpg->doomCanvas->screenRect.h) / 12);
+            menuSystem->scrollIndex = SDL_max(0, 6 - menuSystem->maxItems);
+        }
 		item = &menuSystem->items[menuSystem->selectedIndex];
 		if (item->textField[0] == '\0' || (item->flags & 1) != 0) {
 			MenuSystem_moveDir(menuSystem, 1);

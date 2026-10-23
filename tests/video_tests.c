@@ -75,23 +75,58 @@ void test_video(SDL_Surface* surface)
         Render_render(render, canvas->viewX, canvas->viewY, canvas->viewZ, canvas->viewAngle);
         DoomCanvas_drawRGB(canvas);
     }
-    /* A wrap from 4K to the smallest mode must keep the selected row visible. */
-    MenuSystem_setMenu(doomRpg->menuSystem, MENU_VIDEO);
-    doomRpg->menuSystem->selectedIndex = 5;
-    assert(VideoOptions_resolution(doomRpg, 19));
-    Menu_select(doomRpg->menu, MENU_VIDEO, 5);
-    assert(sdlVideo.resolutionIndex == 0);
-    MenuSystem_paint(doomRpg->menuSystem);
-    assert(doomRpg->menuSystem->selectedIndex >= doomRpg->menuSystem->scrollIndex);
-    assert(doomRpg->menuSystem->selectedIndex < doomRpg->menuSystem->scrollIndex + doomRpg->menuSystem->maxItems);
+    /* Opening a picker must not change the mode; cancel preserves it. */
+    MenuSystem_t* menu = doomRpg->menuSystem;
+    MenuSystem_setMenu(menu, MENU_VIDEO);
+    menu->selectedIndex = 5;
+    int active = sdlVideo.resolutionIndex;
+    void* mapBefore = render->mapSprites;
+    MenuSystem_select(menu);
+    assert(menu->menu == MENU_RESOLUTION);
+    assert(menu->selectedIndex == active + 1);
+    assert(menu->numItems == SDL_VIDEO_MODE_COUNT + 1);
+    assert(sdlVideo.resolutionIndex == active && render->mapSprites == mapBefore);
+    for (int row = 1; row < menu->numItems; ++row) assert(menu->items[row].action == row - 1);
+    MenuSystem_paint(menu);
+    snprintf(path, sizeof(path), "source/tests/resolution-picker-%dx%d.bmp", sdlVideo.rendererW, sdlVideo.rendererH);
+    assert(SDL_SaveBMP(surface, path) == 0);
+    MenuSystem_scrollDown(menu);
+    MenuSystem_back(menu);
+    assert(menu->menu == MENU_VIDEO && menu->selectedIndex == 5);
+    assert(sdlVideo.resolutionIndex == active && render->mapSprites == mapBefore);
+    /* Select a distant option directly, not by cycling through modes. */
+    MenuSystem_select(menu);
+    menu->selectedIndex = 18; /* 1920x1080, saved index 17. */
+    MenuSystem_select(menu);
+    assert(menu->menu == MENU_VIDEO && sdlVideo.resolutionIndex == 17);
+    assert(sdlVideo.rendererW == 1920 && sdlVideo.rendererH == 1080);
+    MenuSystem_setMenu(menu, MENU_INGAME_VIDEO);
+    menu->selectedIndex = 5;
+    MenuSystem_select(menu);
+    assert(menu->menu == MENU_INGAME_RESOLUTION && menu->oldMenu == MENU_INGAME_VIDEO);
+    menu->selectedIndex = 1; /* Smallest mode, chosen in one operation. */
+    MenuSystem_select(menu);
+    assert(menu->menu == MENU_INGAME_VIDEO && sdlVideo.resolutionIndex == 0);
+    MenuSystem_paint(menu);
+    assert(menu->selectedIndex >= menu->scrollIndex);
+    assert(menu->selectedIndex < menu->scrollIndex + menu->maxItems);
     assert(VideoOptions_resolution(doomRpg, initial));
-    /* Menu actions apply the change during selection, including the wrap. */
-    MenuSystem_setMenu(doomRpg->menuSystem, MENU_INGAME_VIDEO);
-    int next = (sdlVideo.resolutionIndex + 1) % SDL_VIDEO_MODE_COUNT;
-    Menu_select(doomRpg->menu, MENU_INGAME_VIDEO, 5);
-    assert(sdlVideo.resolutionIndex == next);
-    assert(sdlVideo.rendererW == sdlVideoModes[next].width);
-    assert(VideoOptions_resolution(doomRpg, initial));
+    /* Missing and invalid configs use 640x480, while valid saved modes survive. */
+    assert(sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].width == 640 && sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].height == 480);
+    Game_saveConfig(doomRpg->game, 0);
+    assert(rename("Config", "Config-default-test.bak") == 0);
+    sdlVideo.resolutionIndex = 0;
+    Game_loadConfig(NULL);
+    assert(sdlVideo.resolutionIndex == SDL_DEFAULT_VIDEO_MODE);
+    assert(rename("Config-default-test.bak", "Config") == 0);
+    sdlVideo.resolutionIndex = SDL_VIDEO_MODE_COUNT + 10;
+    Game_saveConfig(doomRpg->game, 0);
+    Game_loadConfig(NULL);
+    assert(sdlVideo.resolutionIndex == SDL_DEFAULT_VIDEO_MODE);
+    sdlVideo.resolutionIndex = initial;
+    Game_saveConfig(doomRpg->game, 0);
+    Game_loadConfig(NULL);
+    assert(sdlVideo.resolutionIndex == initial);
     MenuSystem_setMenu(doomRpg->menuSystem, MENU_INGAME_OPTIONS);
     assert(strcmp(doomRpg->menuSystem->items[4].textField, "Compact text:") == 0);
     boolean before = sdlVideo.compactText;
@@ -102,5 +137,5 @@ void test_video(SDL_Surface* surface)
     assert(SDL_SaveBMP(surface, path) == 0);
     sdlVideo.compactText = compactBefore;
     Game_saveConfig(doomRpg->game, 0);
-    puts("PASS video: live framebuffer/layout changes through 4K, state preserved, compact text reflow and persistence, menu actions");
+    puts("PASS video: live framebuffer/layout changes through 4K, state preserved, compact text reflow and persistence, resolution picker/cancel, 640x480 defaults");
 }

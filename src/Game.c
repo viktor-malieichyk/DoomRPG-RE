@@ -700,6 +700,7 @@ void Game_loadConfig(Game_t* game)
 	
 	printf("loadConfig\n");
 	sdlVideo.compactText = false;
+	sdlVideo.resolutionIndex = SDL_DEFAULT_VIDEO_MODE;
 
 	rw = SDL_RWFromFile("Config", "r");
 	if (rw) {
@@ -743,7 +744,7 @@ void Game_loadConfig(Game_t* game)
 			
 			// New
 			intData = File_readInt(rw);
-			sdlVideo.resolutionIndex = (intData >= 0 && intData < SDL_VIDEO_MODE_COUNT) ? intData : 8;
+			sdlVideo.resolutionIndex = (intData >= 0 && intData < SDL_VIDEO_MODE_COUNT) ? intData : SDL_DEFAULT_VIDEO_MODE;
 
 			// New
 			intData = File_readInt(rw);
