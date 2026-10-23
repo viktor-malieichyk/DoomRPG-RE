@@ -7,10 +7,13 @@ typedef struct SDLVideo_s
 	SDL_Renderer* renderer;
 	int rendererW;
 	int rendererH;
+	/* UI coordinates are separate from the native-resolution framebuffer. */
+	int uiW, uiH;
 	boolean fullScreen;
 	boolean vSync;
 	boolean integerScaling;
 	boolean displaySoftKeys;
+	boolean compactText;
 	int resolutionIndex;
 } SDLVideo_t;
 
@@ -18,6 +21,9 @@ extern SDLVideo_t sdlVideo;
 
 void SDL_InitVideo(void);
 void SDL_Close(void);
+void SDL_RefreshController(void);
+void SDL_ConfigureUISize(void);
+SDL_Rect SDL_UIToFramebuffer(SDL_Rect rect);
 SDLVideo_t* SDL_GetVideo(void);
 void SDL_RenderDrawFillCircle(SDL_Renderer* renderer, int x, int y, int r);
 void SDL_RenderDrawCircle(SDL_Renderer* renderer, int x, int y, int r);
@@ -57,7 +63,8 @@ typedef struct SDLVidModes_s
 	int width, height;
 } SDLVidModes_t;
 
-extern SDLVidModes_t sdlVideoModes[14];
+#define SDL_VIDEO_MODE_COUNT 20
+extern SDLVidModes_t sdlVideoModes[SDL_VIDEO_MODE_COUNT];
 
 //Analog joystick dead zone
 #define JOYSTICK_DEAD_ZONE 8000

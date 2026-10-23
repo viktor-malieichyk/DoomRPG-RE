@@ -226,7 +226,7 @@ void Combat_drawWeapon(Combat_t* combat, int x, int y)
 		Render_draw2DSprite(render, 
 			240 + player->weapon, 
 			z ? 1 : 0, 
-			doomCanvas->SCR_CX + ((((((pX + x) - 32) << 8) * scale) + 0xff00) >> FRACBITS),
+			(render->screenWidth / 2) + ((((((pX + x) - 32) << 8) * scale) + 0xff00) >> FRACBITS),
 			render->screenHeight - (((((64 - (pY + y)) << 8) * scale) + 0xff00) >> FRACBITS), 0, damageBlend);
 	}
 }

@@ -13,6 +13,7 @@
 #include "EntityDef.h"
 #include "Weapon.h"
 #include "SDL_Video.h"
+#include "TextFields.h"
 
 Hud_t* Hud_init(Hud_t* hud, DoomRPG_t* doomRpg)
 {
@@ -268,10 +269,10 @@ void Hud_drawEffects(Hud_t* hud)
             DoomRPG_setColor(doomRpg, 0xFFFFFF);
         }
 
-        DoomRPG_fillRect(doomRpg, 0, hud->statusTopBarHeight, 2, doomRpg->render->screenHeight + -1);
-        DoomRPG_fillRect(doomRpg, doomCanvas->displayRect.w + -2, hud->statusTopBarHeight, 2, doomRpg->render->screenHeight + -1);
+        DoomRPG_fillRect(doomRpg, 0, hud->statusTopBarHeight, 2, doomCanvas->screenRect.h + -1);
+        DoomRPG_fillRect(doomRpg, doomCanvas->displayRect.w + -2, hud->statusTopBarHeight, 2, doomCanvas->screenRect.h + -1);
         DoomRPG_fillRect(doomRpg, 0, hud->statusTopBarHeight, doomCanvas->displayRect.w - 1, 2);
-        DoomRPG_fillRect(doomRpg, 0, hud->statusTopBarHeight + doomRpg->render->screenHeight + -2, doomCanvas->displayRect.w - 1, 2);
+        DoomRPG_fillRect(doomRpg, 0, hud->statusTopBarHeight + doomCanvas->screenRect.h + -2, doomCanvas->displayRect.w - 1, 2);
 
         if (hud->damageDir && (hud->damageCount > 0)) {
             srcY = 0;
@@ -374,13 +375,10 @@ void Hud_drawTopBar(Hud_t* hud)
         return;
     }  
 
-    strEnd = SDL_strlen(text);
-    w = doomCanvas->displayRect.w;
-    if (((strEnd * 9) + 10) > w) {
-        strEnd = ((unsigned int)((w - 1) / 7)) - 1;
-    }
+    hud->msgMaxChars = SDL_max(1, (int)((doomCanvas->displayRect.w - 4) / (7 * TextFields_scale())));
+    strEnd = SDL_min((int)SDL_strlen(text) - strBeg, hud->msgMaxChars);
+    TextFields_draw(doomCanvas, text, 1, (hud->statusTopBarHeight - 12 * TextFields_scale()) / 2, 0, strBeg, strEnd);
 
-    DoomCanvas_drawFont(doomCanvas, text, 1, (hud->statusTopBarHeight >> 1) - 5, 0, strBeg, strEnd, false);
 }
 
 void Hud_finishMessageBufferForce(Hud_t* hud, boolean force)
@@ -438,7 +436,7 @@ void Hud_startup(Hud_t* hud, boolean largeStatus)
 
 	doomRpg = hud->doomRpg;
 
-	hud->msgMaxChars = (doomRpg->doomCanvas->displayRect.w - 4) / 7;
+	hud->msgMaxChars = (int)((doomRpg->doomCanvas->displayRect.w - 4) / (7 * TextFields_scale()));
 	hud->statusTopBarHeight = 20;
     DoomRPG_createImage(doomRpg, "bar_lg.bmp", false, &hud->imgStatusBarLarge);
     DoomRPG_createImage(doomRpg, "k.bmp", false, &hud->imgStatusBar);

@@ -31,6 +31,8 @@ typedef struct MenuSystem_s
 	boolean paintMenu;
 	char stringBuffer[32];
 
+	int lastInputKey;
+	boolean inputWaitRelease;
 	boolean setBind;// new
 	int bindIndx;// new
 	int nextMsgTime; // New

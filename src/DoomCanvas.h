@@ -70,6 +70,7 @@ typedef struct DoomCanvas_s
 	int shakeY;
 	short dialogIndexes[1024];
 	char dialogBuffer[512];
+	char dialogSource[512];
 	int dialogLineStartTime;
 	int dialogTypeLineIdx;
 	int numDialogLines;
@@ -257,6 +258,7 @@ void DoomCanvas_startShake(DoomCanvas_t* doomCanvas, int i, int i2, int i3);
 void DoomCanvas_startSpeedTest(DoomCanvas_t* doomCanvas, boolean b);
 void DoomCanvas_vibrate(DoomCanvas_t* doomCanvas, int i);
 void DoomCanvas_startup(DoomCanvas_t* doomCanvas);
+void DoomCanvas_layout(DoomCanvas_t* doomCanvas);
 void DoomCanvas_uncoverAutomap(DoomCanvas_t* doomCanvas);
 void DoomCanvas_unloadMedia(DoomCanvas_t* doomCanvas);
 void DoomCanvas_checkFacingEntity(DoomCanvas_t* doomCanvas);

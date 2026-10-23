@@ -171,6 +171,7 @@ typedef struct Render_s
 	int frameTime;
 	struct DoomRPG_s* doomRpg;
 	SDL_Rect clipRect;
+	SDL_Rect uiViewport; /* destination of the native 3D buffer */
 	SDL_Texture* piDIB;
 	int pitch;
 	byte* framebuffer;

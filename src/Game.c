@@ -699,6 +699,7 @@ void Game_loadConfig(Game_t* game)
 	int intData;
 	
 	printf("loadConfig\n");
+	sdlVideo.compactText = false;
 
 	rw = SDL_RWFromFile("Config", "r");
 	if (rw) {
@@ -742,7 +743,7 @@ void Game_loadConfig(Game_t* game)
 			
 			// New
 			intData = File_readInt(rw);
-			sdlVideo.resolutionIndex = intData;
+			sdlVideo.resolutionIndex = (intData >= 0 && intData < SDL_VIDEO_MODE_COUNT) ? intData : 8;
 
 			// New
 			intData = File_readInt(rw);
@@ -784,7 +785,11 @@ void Game_loadConfig(Game_t* game)
 					}
 				}
 				SDL_memcpy(keyMappingTemp, keyMapping, sizeof(keyMapping));
-			}
+			} else {
+                SDL_RWseek(rw, 12 * KEYBINDS_MAX * sizeof(int), RW_SEEK_CUR);
+            }
+            if (SDL_RWtell(rw) < SDL_RWsize(rw)) sdlVideo.compactText = File_readByte(rw) != 0;
+
 
 		}
 		else {
@@ -1946,6 +1951,7 @@ void Game_saveConfig(Game_t* game, int num)
 		}
 	}
 
+	File_writeByte(rw, sdlVideo.compactText);
 	SDL_RWclose(rw);
 }
 

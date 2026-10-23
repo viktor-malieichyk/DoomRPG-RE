@@ -13,6 +13,7 @@
 #include "MenuSystem.h"
 #include "Sound.h"
 #include "SDL_Video.h"
+#include "Controls.h"
 
 MenuSystem_t* MenuSystem_init(MenuSystem_t* menuSystem, DoomRPG_t* doomRpg)
 {
@@ -63,7 +64,7 @@ void MenuSystem_back(MenuSystem_t* menuSystem)
 {
 	if (menuSystem->oldMenu != -1) {
 
-		if ((menuSystem->menu == MENU_BINDINGS) || (menuSystem->menu == MENU_INGAME_BINDINGS)) {
+		if (Controls_isMenu(menuSystem->menu)) {
 			// Apply changes
 			SDL_memcpy(keyMapping, keyMappingTemp, sizeof(keyMapping));
 			Game_saveConfig(menuSystem->doomRpg->game, 0);
@@ -237,6 +238,10 @@ void MenuSystem_moveDir(MenuSystem_t* menuSystem, int i)
 
 void MenuSystem_paint(MenuSystem_t* menuSystem)
 {
+    if (Controls_isMenu(menuSystem->menu)) {
+        Controls_paint(menuSystem);
+        return;
+    }
 	int i, i2;
 
 	DoomRPG_t* doomRpg;
@@ -361,6 +366,28 @@ void MenuSystem_paint(MenuSystem_t* menuSystem)
 			}
 		}
 
+        /* A common label anchor keeps longer main-menu entries aligned. */
+        if (menuSystem->type == 4) {
+            int widest = 0;
+            for (int row = 0; row < menuSystem->numItems; ++row) {
+                int length = (int)SDL_strlen(menuSystem->items[row].textField);
+                while (length && menuSystem->items[row].textField[length - 1] == ' ') --length;
+                widest = SDL_max(widest, length);
+            }
+            i101 = doomCanvas->SCR_CX - widest * local_38 / 2;
+        }
+        boolean scrolling = menuSystem->maxItems > 0 && menuSystem->numItems > menuSystem->maxItems;
+        int valueColumnRight = doomCanvas->SCR_CX + 62 - (scrolling ? local_34 : 0);
+        for (int row = 0; row < menuSystem->numItems; ++row) {
+            MenuItem_t* item = &menuSystem->items[row];
+            if (item->textField2[0] && !(item->flags & 2)) {
+                int required = i101 + ((int)SDL_strlen(item->textField) + (int)SDL_strlen(item->textField2) + 2) * local_38;
+                valueColumnRight = SDL_max(valueColumnRight, required);
+            }
+        }
+        int columnLimit = scrolling ? SDL_min(doomCanvas->displayRect.w - 12, doomCanvas->SCR_CX + 62 - local_34) : doomCanvas->displayRect.w - 12;
+        valueColumnRight = SDL_min(valueColumnRight, columnLimit);
+
 		int local_2c = local_28 >> 1;
 
 		for (int i11 = menuSystem->scrollIndex; i11 < menuSystem->numItems; i11++) {
@@ -369,6 +396,8 @@ void MenuSystem_paint(MenuSystem_t* menuSystem)
 
 			SDL_memcpy(textField, mItem->textField, sizeof(mItem->textField));
 			SDL_memcpy(textField2, mItem->textField2, sizeof(mItem->textField2));
+            textField[sizeof(textField) - 1] = 0;
+            textField2[sizeof(textField2) - 1] = 0;
 
 			if (textField != '\0')
 			{
@@ -415,21 +444,22 @@ void MenuSystem_paint(MenuSystem_t* menuSystem)
 
 				if ((textField[0] != '\0') && (mItem->flags & 2) != 0) {
 					int length = (((strlen(textField) << 16) >> 9) * local_38) >> 8;
-					i10 = (menuSystem->maxItems == 0 || menuSystem->numItems <= menuSystem->maxItems) ? doomCanvas->SCR_CX - length : (doomCanvas->SCR_CX - 6) - length;
+					i10 = menuSystem->type == 4 ? i101 : (scrolling ? doomCanvas->SCR_CX - 6 - length : doomCanvas->SCR_CX - length);
 				}
 				else if (textField2[0] != '\0') {
-					int i12 = (doomCanvas->SCR_CX + 64) - 2;
-
-					if (menuSystem->maxItems != 0) {
-						i12 -= local_34;
-					}
-
-					DoomCanvas_drawFont(doomCanvas, textField2, i12, i2, 9, 0, -1, isLargerFont);
+                    int i12 = valueColumnRight;
+                    int valueLeft = i12 - (int)SDL_strlen(textField2) * local_38;
+                    int labelChars = SDL_max(0, (valueLeft - 2 * local_38 - i10) / local_38);
+                    if ((int)SDL_strlen(textField) > labelChars) {
+                        if (labelChars >= 3) {
+                            SDL_strlcpy(textField + labelChars - 3, "...", sizeof(textField) - labelChars + 3);
+                        } else textField[labelChars] = 0;
+                    }
+                    DoomCanvas_drawFont(doomCanvas, textField2, i12, i2, 9, 0, -1, isLargerFont);
 				}
 
 				if (menuSystem->type != 5 && i11 == menuSystem->selectedIndex) {
-					DoomCanvas_drawImage(doomCanvas, &menuSystem->imgHand, i10, i2 + local_2c, 40);
-					i10 += 2;
+					DoomCanvas_drawImage(doomCanvas, &menuSystem->imgHand, i10 - 2, i2 + local_2c, 40);
 				}
 				if (textField[0] != '\0') {
 					DoomCanvas_drawFont(doomCanvas, textField, i10, i2, 0, 0, -1, isLargerFont);
@@ -522,6 +552,13 @@ void MenuSystem_scrollUp(MenuSystem_t* menuSystem)
 
 void MenuSystem_setMenu(MenuSystem_t* menuSystem, int menu)
 {
+    if (menu != menuSystem->menu) {
+        /* The same held key has a different action after a menu transition.
+           Do not interpret that action change as another physical press. */
+        menuSystem->inputWaitRelease = true;
+        menuSystem->lastInputKey = 0;
+        menuSystem->doomRpg->doomCanvas->numEvents = 0;
+    }
 	MenuItem_t* item;
 	menuSystem->cheatCombo = 0;
 	menuSystem->digitCount = 0;

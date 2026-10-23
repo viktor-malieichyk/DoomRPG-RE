@@ -1,4 +1,5 @@
 //Using SDL and standard IO
+#define SDL_MAIN_HANDLED
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <stdio.h>
@@ -12,6 +13,11 @@
 #include "MenuSystem.h"
 #include "SDL_Video.h"
 #include "Z_Zip.h"
+#include "Controls.h"
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif
 
 extern DoomRPG_t* doomRpg;
 int main(int argc, char* args[])
@@ -19,8 +25,9 @@ int main(int argc, char* args[])
 	SDL_Event ev;
 	int		UpTime = 0;
 	int		mouseTime = 0;
-	int		key, oldKey, mouse_Button;
+	int		mouse_Button;
 
+	SDL_SetMainReady();
 	Z_Init();
 	SDL_InitVideo();
 	SDL_InitAudio();
@@ -48,8 +55,6 @@ int main(int argc, char* args[])
 
 	const Uint8* state = SDL_GetKeyboardState(NULL);
 
-	key = 0;
-	oldKey = -1;
 	
 	
 	while (doomRpg->closeApplet != true)
@@ -102,36 +107,7 @@ int main(int argc, char* args[])
 					break;
 				}
 
-				case SDL_MOUSEMOTION:
-				{
-					if (!doomRpg->menuSystem->setBind) {
-						if (currentTimeMillis > mouseTime) {
-							mouseTime = currentTimeMillis + 128;
-							int x = 0, y = 0;
-							SDL_GetRelativeMouseState(&x, &y);
 
-							int sensivity = (doomRpg->doomCanvas->mouseSensitivity * 1000) / 100;
-
-							if (x <= -sensivity) {
-								mouse_Button = MOUSE_BUTTON_MOTION_LEFT;
-							}
-							else if (x >= sensivity) {
-								mouse_Button = MOUSE_BUTTON_MOTION_RIGHT;
-							}
-
-							if (doomRpg->doomCanvas->mouseYMove) {
-								if (y <= -sensivity) {
-									mouse_Button = MOUSE_BUTTON_MOTION_UP;
-								}
-								else if (y >= sensivity) {
-									mouse_Button = MOUSE_BUTTON_MOTION_DOWN;
-								}
-							}
-						}
-					}
-					break;
-				}
-				
 				case SDL_WINDOWEVENT:
 				{
 					if (ev.window.event == SDL_WINDOWEVENT_RESIZED) {
@@ -151,15 +127,20 @@ int main(int argc, char* args[])
 						break;
 					}
 
-					if (ev.window.event != SDL_WINDOWEVENT_CLOSE)
-					{
-						int w, h;
-						SDL_GetWindowSize(sdlVideo.window, &w, &h);
-						SDL_WarpMouseInWindow(sdlVideo.window, w / 2, h / 2);
-						SDL_GetRelativeMouseState(NULL, NULL);
-					}
 					break;
 				}
+
+                case SDL_KEYDOWN:
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_F1 && !ev.key.repeat && !doomRpg->menuSystem->setBind)
+                        Controls_open(doomRpg);
+                    break;
+
+                case SDL_CONTROLLERDEVICEADDED:
+                case SDL_CONTROLLERDEVICEREMOVED:
+                case SDL_JOYDEVICEADDED:
+                case SDL_JOYDEVICEREMOVED:
+                    SDL_RefreshController();
+                    break;
 
 				case SDL_QUIT:
 				{
@@ -169,27 +150,10 @@ int main(int argc, char* args[])
 				}
 			}
 
-			key = DoomRPG_getEventKey(mouse_Button, state);
-			if (key != oldKey) {
-				//printf("oldKey %d\n", oldKey);
-				//printf("key %d\n", key);
+        }
 
-				oldKey = key;
-				if (!doomRpg->menuSystem->setBind) {
-					DoomCanvas_keyPressed(doomRpg->doomCanvas, key);
-				}
-				else {
-					goto setBind;
-				}
-			}
-			else if (key == 0) {
-			setBind:
-				if (doomRpg->menuSystem->setBind) {
-					DoomRPG_setBind(doomRpg, mouse_Button, state);
-				}
-			}
-		}
-		
+        DoomRPG_pollInput(doomRpg, mouse_Button, state);
+
 		if (currentTimeMillis > UpTime) {
 			UpTime = currentTimeMillis + 15;
 			DoomRPG_loopGame(doomRpg);
@@ -203,3 +167,10 @@ int main(int argc, char* args[])
 
 	return 0;
 }
+#ifdef _WIN32
+/* CMake's WIN32 target uses this entry point with MSVC as well as MinGW. */
+int WINAPI WinMain(HINSTANCE instance, HINSTANCE previous, LPSTR commandLine, int show)
+{
+    return main(0, NULL);
+}
+#endif

@@ -57,6 +57,9 @@ Render_t* Render_init(Render_t* render, DoomRPG_t* doomRpg)
 void Render_setup(Render_t* render, SDL_Rect* windowRect)
 {
 	boolean memError = false;
+	render->uiViewport = *windowRect;
+	SDL_Rect framebufferRect = SDL_UIToFramebuffer(*windowRect);
+	windowRect = &framebufferRect;
 	render->screenWidth = windowRect->w;
 	render->screenHeight = windowRect->h;
 	render->screenX = windowRect->x;
@@ -1287,18 +1290,10 @@ void Render_render(Render_t* render, int viewx, int viewy, int viewz, unsigned i
 	clip.w = render->screenWidth;
 	clip.h = render->screenHeight;
 
-	renderQuad.x = render->screenX;
-	renderQuad.y = render->screenY;
-	renderQuad.w = sdlVideo.rendererW;
-	renderQuad.h = sdlVideo.rendererH;
-	if (clip.w <= renderQuad.w) {
-		renderQuad.w = clip.w;
-	}
-	if (clip.h <= renderQuad.h) {
-		renderQuad.h = clip.h;
-	}
+	renderQuad = render->uiViewport;
 
-	SDL_UpdateTexture(render->piDIB, NULL, render->framebuffer, sdlVideo.rendererW * 2);
+	renderQuad = SDL_UIToFramebuffer(renderQuad);
+	SDL_UpdateTexture(render->piDIB, NULL, render->framebuffer, render->pitch);
 	SDL_RenderCopy(render->doomRpg->sdlVideo->renderer, render->piDIB, &clip, &renderQuad);*/
 }
 
@@ -2907,18 +2902,10 @@ void Render_setBerserkColor(Render_t* render) {
 	clip.w = render->screenWidth;
 	clip.h = render->screenHeight;
 
-	renderQuad.x = render->screenX;
-	renderQuad.y = render->screenY;
-	renderQuad.w = sdlVideo.rendererW;
-	renderQuad.h = sdlVideo.rendererH;
-	if (clip.w <= renderQuad.w) {
-		renderQuad.w = clip.w;
-	}
-	if (clip.h <= renderQuad.h) {
-		renderQuad.h = clip.h;
-	}
+	renderQuad = render->uiViewport;
 
-	SDL_UpdateTexture(render->piDIB, NULL, render->framebuffer, sdlVideo.rendererW * 2);
+	renderQuad = SDL_UIToFramebuffer(renderQuad);
+	SDL_UpdateTexture(render->piDIB, NULL, render->framebuffer, render->pitch);
 	SDL_RenderCopy(sdlVideo.renderer, render->piDIB, &clip, &renderQuad);
 }
 

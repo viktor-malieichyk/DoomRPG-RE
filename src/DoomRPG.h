@@ -38,6 +38,7 @@ typedef struct keyMapping_s
 extern keyMapping_t keyMapping[12];
 extern keyMapping_t keyMappingTemp[12];
 extern keyMapping_t keyMappingDefault[12];
+int DoomRPG_controllerButton(void);
 
 enum _AVKType {
 	AVK_UNDEFINED = 0,	// hex 0xE010; dec 57360
@@ -271,6 +272,7 @@ unsigned int DoomRPG_GetUpTimeMS(void);
 int DoomRPG_freeMemory(void);
 
 int DoomRPG_getEventKey(int mouse_Button, const Uint8* state);
+void DoomRPG_pollInput(DoomRPG_t* game, int mouse_Button, const Uint8* state);
 void DoomRPG_setDefaultBinds(DoomRPG_t* doomrpg);
 void DoomRPG_setBind(DoomRPG_t* doomrpg, int mouse_Button, const Uint8* state);
 

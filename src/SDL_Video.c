@@ -14,7 +14,7 @@ SDLVideo_t sdlVideo;
 SDLController_t sdlController;
 FluidSynth_t fluidSynth;
 
-SDLVidModes_t sdlVideoModes[14] =
+SDLVidModes_t sdlVideoModes[SDL_VIDEO_MODE_COUNT] =
 {
 	{128, 128},
 	{128, 160},
@@ -29,7 +29,14 @@ SDLVidModes_t sdlVideoModes[14] =
 	{416, 352},
 	{640, 360},
 	{640, 480},
-	{800, 600}
+	{800, 600},
+	/* Append new modes so existing saved resolution indices stay valid. */
+	{960, 540},
+	{1280, 720},
+	{1600, 900},
+	{1920, 1080},
+	{2560, 1440},
+	{3840, 2160}
 };
 
 void SDL_InitVideo(void)
@@ -58,11 +65,12 @@ void SDL_InitVideo(void)
     video_w = sdlVideoModes[sdlVideo.resolutionIndex].width;
     video_h = sdlVideoModes[sdlVideo.resolutionIndex].height;
 
-	SDL_SetRelativeMouseMode(SDL_TRUE);
-	SDL_ShowCursor(SDL_DISABLE);
+	SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+	SDL_ShowCursor(sdlVideo.fullScreen ? SDL_DISABLE : SDL_ENABLE);
 
 	if (sdlVideo.fullScreen) {
-		flags |= SDL_WINDOW_FULLSCREEN;
+		flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
 	}
 
 	// Set the highdpi flags - this makes a big difference on Macs with
@@ -82,6 +90,7 @@ void SDL_InitVideo(void)
 	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
 	SDL_SetHint(SDL_HINT_RENDER_VSYNC, sdlVideo.vSync ? "1" : "0");
 
+	SDL_SetWindowGrab(sdlVideo.window, SDL_FALSE);
 	sdlVideo.renderer = SDL_CreateRenderer(sdlVideo.window, -1, SDL_RENDERER_ACCELERATED);
 
 	sdlVideo.rendererW = sdlVideoModes[sdlVideo.resolutionIndex].width;
@@ -91,6 +100,7 @@ void SDL_InitVideo(void)
     // it is best to limit the window size so that it cannot
     // be smaller than our internal buffer size.
     SDL_SetWindowMinimumSize(sdlVideo.window, sdlVideo.rendererW, sdlVideo.rendererH);
+    SDL_ConfigureUISize();
     SDL_RenderSetLogicalSize(sdlVideo.renderer, sdlVideo.rendererW, sdlVideo.rendererH);
     SDL_RenderSetIntegerScale(sdlVideo.renderer, sdlVideo.integerScaling);
 
@@ -150,6 +160,45 @@ void SDL_InitVideo(void)
 			}
 		}
 	}
+}
+
+void SDL_RefreshController(void)
+{
+    if (sdlController.gGameController && SDL_GameControllerGetAttached(sdlController.gGameController)) return;
+    if (sdlController.gJoystick && SDL_JoystickGetAttached(sdlController.gJoystick)) return;
+    if (sdlController.gJoyHaptic) SDL_HapticClose(sdlController.gJoyHaptic);
+    if (sdlController.gGameController) SDL_GameControllerClose(sdlController.gGameController);
+    if (sdlController.gJoystick) SDL_JoystickClose(sdlController.gJoystick);
+    sdlController.gJoyHaptic = NULL;
+    sdlController.gGameController = NULL;
+    sdlController.gJoystick = NULL;
+    for (int i = 0; i < SDL_NumJoysticks(); ++i) {
+        if (SDL_IsGameController(i)) sdlController.gGameController = SDL_GameControllerOpen(i);
+        else sdlController.gJoystick = SDL_JoystickOpen(i);
+        if (sdlController.gGameController || sdlController.gJoystick) break;
+    }
+}
+
+void SDL_ConfigureUISize(void)
+{
+    /* Keep the original 320x240 interface readable at higher resolutions.
+       All UI primitives share these coordinates, including text, dialogue
+       borders and menu spacing. The software 3D buffer stays full resolution. */
+    float uiScale = SDL_min(sdlVideo.rendererW / 320.0f, sdlVideo.rendererH / 240.0f);
+    uiScale = SDL_max(uiScale, 1.0f);
+    sdlVideo.uiW = ((int)(sdlVideo.rendererW / uiScale + 0.5f)) & ~1;
+    sdlVideo.uiH = (int)(sdlVideo.rendererH / uiScale + 0.5f);
+}
+
+SDL_Rect SDL_UIToFramebuffer(SDL_Rect rect)
+{
+    int right = (rect.x + rect.w) * sdlVideo.rendererW / sdlVideo.uiW;
+    int bottom = (rect.y + rect.h) * sdlVideo.rendererH / sdlVideo.uiH;
+    rect.x = rect.x * sdlVideo.rendererW / sdlVideo.uiW;
+    rect.y = rect.y * sdlVideo.rendererH / sdlVideo.uiH;
+    rect.w = right - rect.x;
+    rect.h = bottom - rect.y;
+    return rect;
 }
 
 void SDL_Close(void)

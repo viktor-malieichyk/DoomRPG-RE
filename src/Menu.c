@@ -15,6 +15,9 @@
 #include "EntityDef.h"
 #include "Sound.h"
 #include "SDL_Video.h"
+#include "Controls.h"
+#include "VideoOptions.h"
+#include "TextFields.h"
 
 #define MAXSTORES 4
 #define MAXSTORELINES 17 * 2
@@ -348,18 +351,15 @@ void Menu_initMenu(Menu_t* menu, int i)
 			menuSystem->oldMenu = -1;
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Start Game", 2, 0);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Options   ", 2, 0);
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Help/About", 2, 0);
+			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Controls/Help", 2, 0);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Exit      ", 2, 0);
 			break;
 		}
 
 		case MENU_MAIN_HELP_ABOUT: {
-			menuSystem->imgBG = NULL;
-			menuSystem->oldMenu = MENU_MAIN;
-			menuSystem->type = 5; // MENUTYPE_HELP
-			Menu_LoadHelpResource(menu);
-			break;
-		}
+            Controls_init(menuSystem, MENU_MAIN);
+            break;
+        }
 
 		case MENU_MAIN_EXIT: {
 			Menu_setYesNo(menu, "Exit Doom RPG?");
@@ -419,6 +419,7 @@ void Menu_initMenu(Menu_t* menu, int i)
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Input", 0, (i == MENU_INGAME_OPTIONS) ? true : false);
 			// New Option
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Sound", 0, (i == MENU_INGAME_OPTIONS) ? true : false);
+            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Compact text:", sdlVideo.compactText ? "on" : "off", 0, 0);
 
 
 #if 0 // Original Code
@@ -519,14 +520,9 @@ void Menu_initMenu(Menu_t* menu, int i)
 		}
 
 		case MENU_INGAME_HELP_ABOUT: {
-			strncpy(menu->doomRpg->hud->logMessage, "Help", MS_PER_CHAR);
-			menuSystem->oldMenu = MENU_INGAME;
-			menuSystem->selectedIndex = 1;
-			menuSystem->scrollIndex = 0;
-			menuSystem->type = 5;
-			Menu_LoadHelpResource(menu);
-			break;
-		}
+            Controls_init(menuSystem, MENU_INGAME);
+            break;
+        }
 
 		case MENU_INGAME: {
 			strncpy(menu->doomRpg->hud->logMessage, "Game Menu", MS_PER_CHAR);
@@ -540,7 +536,7 @@ void Menu_initMenu(Menu_t* menu, int i)
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Load Game", 0, MENU_INGAME_LOAD);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Automap", 0, MENU_NONE);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Status", 0, MENU_INGAME_STATUS);
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Help/About", 0, MENU_INGAME_HELP_ABOUT);
+			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Controls/Help", 0, MENU_INGAME_HELP_ABOUT);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Options", 0, MENU_INGAME_OPTIONS);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Main Menu", 0, MENU_INGAME_EXIT);
 			break;
@@ -1035,7 +1031,7 @@ void Menu_initMenu(Menu_t* menu, int i)
 			}
 
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Back", 0, 0);
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Bindings", 0, 0);
+			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Controls/Help", 0, 0);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Mouse", 0, 0);
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Controller", 0, 0);
 			break;
@@ -1077,68 +1073,10 @@ void Menu_initMenu(Menu_t* menu, int i)
 		}
 
 		// NEW MENU OPTIONS
-		case MENU_BINDINGS:
-		case MENU_INGAME_BINDINGS: {
-			if (menuSystem->type == 1) {
-				strncpy(menu->doomRpg->hud->logMessage, "Bindings", sizeof(menu->doomRpg->hud->logMessage));
-				menuSystem->oldMenu = MENU_INGAME_INPUT;
-				menuSystem->type = 1;
-			}
-			else {
-				menuSystem->oldMenu = MENU_INPUT;
-				menuSystem->type = 7;
-			}
-
-			menuSystem->nextMsgTime = 0;
-			menuSystem->nextMsg = 0;
-
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Back", 0, 0);
-
-			textDivider = MenuSystem_buildDivider(menuSystem, "MOVEMENT");
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], textDivider, 3, 0);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Move Fwd:", NULL, 0, 0);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 0);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Move Back:", NULL, 0, 1);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 1);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Move Left:", NULL, 0, 4);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 4);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Move Right:", NULL, 0, 5);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 5);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Turn Left:", NULL, 0, 2);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 2);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Turn Right:", NULL, 0, 3);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 3);
-
-			textDivider = MenuSystem_buildDivider(menuSystem, " OTHER  ");
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], textDivider, 1, 0);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Atk/Talk/Use:", NULL, 0, 8);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 8);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Next Weapon:", NULL, 0, 6);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 6);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Prev Weapon:", NULL, 0, 7);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 7);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Pass Turn:", NULL, 0, 9);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 9);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Automap:", NULL, 0, 10);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 10);
-
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Menu Open/Back:", NULL, 0, 11);
-			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "", NULL, 1 | 8, 11);
-
-			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Reset Binds", 0, 0);
-			break;
-		}
+        case MENU_BINDINGS:
+        case MENU_INGAME_BINDINGS:
+            Controls_init(menuSystem, i == MENU_INGAME_BINDINGS ? MENU_INGAME_INPUT : MENU_INPUT);
+            break;
 
 		// NEW MENU OPTIONS
 		case MENU_MOUSE:
@@ -1253,10 +1191,8 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 			break;
 		}
 
-		case MENU_MAIN_HELP_ABOUT: {
-			return MENU_MAIN;
-			break;
-		}
+		case MENU_MAIN_HELP_ABOUT:
+            return Controls_select(menuSystem, itemId);
 
 		case MENU_MAIN_EXIT: {
 			if (itemId == 2) {
@@ -1338,6 +1274,15 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 						return MENU_SOUND;
 					}
 				}
+
+                else if (itemId == 4) {
+                    sdlVideo.compactText ^= true;
+                    TextFields_refresh(doomCanvas);
+                    SDL_strlcpy(menuSystem->items[itemId].textField2, sdlVideo.compactText ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
+                    Game_saveConfig(menu->doomRpg->game, 0);
+                    menuSystem->paintMenu = true;
+                    return menuId;
+                }
 
 #if 0 // Original Code
 			if (doomCanvas->sndFXOnly == false) {
@@ -1503,10 +1448,8 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 			break;
 		}
 
-		case MENU_INGAME_HELP_ABOUT: {
-			return MENU_INGAME;
-			break;
-		}
+		case MENU_INGAME_HELP_ABOUT:
+            return Controls_select(menuSystem, itemId);
 
 		case MENU_INGAME: {
 			menuSystem->oldMenu = MENU_NONE;
@@ -1946,13 +1889,10 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 			if (itemId == 0) {
 				return menuSystem->oldMenu;
 			}
-			else if (itemId == 1) { // New Full Screen Option
-				sdlVideo.fullScreen ^= true;
-				strncpy(menuSystem->items[itemId].textField2, sdlVideo.fullScreen ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
-
-				SDL_ShowCursor(sdlVideo.fullScreen ? SDL_DISABLE : SDL_ENABLE);
-				SDL_SetWindowFullscreen(sdlVideo.window, sdlVideo.fullScreen ? SDL_WINDOW_FULLSCREEN : 0);
-			}
+            else if (itemId == 1) {
+                VideoOptions_fullscreen(!sdlVideo.fullScreen);
+                SDL_strlcpy(menuSystem->items[itemId].textField2, sdlVideo.fullScreen ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
+            }
 			else if (itemId == 2) { // New vSync Option
 				sdlVideo.vSync ^= true;
 				strncpy(menuSystem->items[itemId].textField2, sdlVideo.vSync ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
@@ -1966,10 +1906,9 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 				SDL_RenderSetIntegerScale(sdlVideo.renderer, sdlVideo.integerScaling);
 			}
 			else if (itemId == 5) { // New resolution Option
-				sdlVideo.resolutionIndex++;
-				if (sdlVideo.resolutionIndex >= (sizeof(sdlVideoModes) / sizeof(SDLVidModes_t))) {
-					sdlVideo.resolutionIndex = 0;
-				}
+                int next = (sdlVideo.resolutionIndex + 1) % SDL_VIDEO_MODE_COUNT;
+                if (!VideoOptions_resolution(menu->doomRpg, next))
+                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Video settings", SDL_GetError(), sdlVideo.window);
 				SDL_snprintf(text, sizeof(text), "(%dx%d)", sdlVideoModes[sdlVideo.resolutionIndex].width, sdlVideoModes[sdlVideo.resolutionIndex].height);
 				strncpy(menuSystem->items[itemId].textField, text, sizeof(menuSystem->items[itemId].textField));
 			}
@@ -2065,28 +2004,9 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 			break;
 
 		// NEW MENU OPTIONS
-		case MENU_BINDINGS:
-		case MENU_INGAME_BINDINGS:
-
-			if (!menuSystem->setBind) {
-				if (itemId == 0) {
-					// Apply changes
-					SDL_memcpy(keyMapping, keyMappingTemp, sizeof(keyMapping));
-					Game_saveConfig(menuSystem->doomRpg->game, 0);
-					return menuSystem->oldMenu;
-				}
-				else if (itemId == 27) {
-					// Apply changes to default
-					SDL_memcpy(keyMappingTemp, keyMappingDefault, sizeof(keyMapping));
-				}
-				else {
-					menuSystem->setBind = true;
-					menuSystem->bindIndx = itemId;
-				}
-			}
-			menuSystem->paintMenu = true;
-			return menuSystem->menu;
-			break;
+        case MENU_BINDINGS:
+        case MENU_INGAME_BINDINGS:
+            return Controls_select(menuSystem, itemId);
 
 		// NEW MENU OPTIONS
 		case MENU_MOUSE:

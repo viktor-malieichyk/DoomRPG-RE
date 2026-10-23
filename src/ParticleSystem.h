@@ -66,5 +66,6 @@ void ParticleSystem_render(ParticleSystem_t* particleSystem, int z);
 void ParticleSystem_spawnParticles(ParticleSystem_t* particleSystem, int i, int i2, int z);
 void ParticleSystem_calculateParticles(ParticleSystem_t* particleSystem, int i, int z);
 void ParticleSystem_startup(ParticleSystem_t* particleSystem);
+void ParticleSystem_resize(ParticleSystem_t* particleSystem);
 
 #endif

@@ -18,6 +18,7 @@
 #include "Combat.h"
 #include "SDL_Video.h"
 #include "Z_Zip.h"
+#include "Controls.h"
 
 
 DoomRPG_t* doomRpg = NULL;
@@ -25,18 +26,18 @@ DoomRPG_t* doomRpg = NULL;
 keyMapping_t keyMapping[12];
 keyMapping_t keyMappingTemp[12];
 keyMapping_t keyMappingDefault[12] = {
-	{AVK_UP | AVK_MENU_UP,				{SDL_SCANCODE_UP,-1,-1,-1,-1,-1,-1,-1,-1,-1}},	// Move forward
-	{AVK_DOWN | AVK_MENU_DOWN,			{SDL_SCANCODE_DOWN,-1,-1,-1,-1,-1,-1,-1,-1,-1}},	// Move backward
-	{AVK_LEFT | AVK_MENU_PAGE_UP,		{SDL_SCANCODE_LEFT,-1,-1,-1,-1,-1,-1,-1,-1,-1}},	// Turn left/page up
-	{AVK_RIGHT | AVK_MENU_PAGE_DOWN,	{SDL_SCANCODE_RIGHT,-1,-1,-1,-1,-1,-1,-1,-1,-1}},	// Turn right/page down
-	{AVK_MOVELEFT,						{SDL_SCANCODE_A,-1,-1,-1,-1,-1,-1,-1,-1,-1}},		// Move left
-	{AVK_MOVERIGHT,						{SDL_SCANCODE_D,-1,-1,-1,-1,-1,-1,-1,-1,-1}},		// Move right
-	{AVK_NEXTWEAPON,					{SDL_SCANCODE_Z,-1,-1,-1,-1,-1,-1,-1,-1,-1}},		// Next weapon
-	{AVK_PREVWEAPON,					{SDL_SCANCODE_X,-1,-1,-1,-1,-1,-1,-1,-1,-1}},		// Prev weapon
-	{AVK_SELECT | AVK_MENU_SELECT,		{SDL_SCANCODE_RETURN,-1,-1,-1,-1,-1,-1,-1,-1,-1}},// Attack/Talk/Use
-	{AVK_PASSTURN,						{SDL_SCANCODE_C,-1,-1,-1,-1,-1,-1,-1,-1,-1}},		// Pass Turn
-	{AVK_AUTOMAP,						{SDL_SCANCODE_TAB,-1,-1,-1,-1,-1,-1,-1,-1,-1}},	// Automap
-	{AVK_MENUOPEN | AVK_MENU_OPEN,		{SDL_SCANCODE_ESCAPE,-1,-1,-1,-1,-1,-1,-1,-1,-1}}	// Open menu/back
+	{AVK_UP | AVK_MENU_UP,				{SDL_SCANCODE_UP,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_DPAD_UP,-1,-1,-1,-1,-1,-1,-1,-1}},	// Move forward
+	{AVK_DOWN | AVK_MENU_DOWN,			{SDL_SCANCODE_DOWN,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_DPAD_DOWN,-1,-1,-1,-1,-1,-1,-1,-1}},	// Move backward
+	{AVK_LEFT | AVK_MENU_PAGE_UP,		{SDL_SCANCODE_LEFT,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_DPAD_LEFT,-1,-1,-1,-1,-1,-1,-1,-1}},	// Turn left/page up
+	{AVK_RIGHT | AVK_MENU_PAGE_DOWN,	{SDL_SCANCODE_RIGHT,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_DPAD_RIGHT,-1,-1,-1,-1,-1,-1,-1,-1}},	// Turn right/page down
+	{AVK_MOVELEFT,						{SDL_SCANCODE_A,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_LEFT_BUMPER,-1,-1,-1,-1,-1,-1,-1,-1}},		// Move left
+	{AVK_MOVERIGHT,						{SDL_SCANCODE_D,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_RIGHT_BUMPER,-1,-1,-1,-1,-1,-1,-1,-1}},		// Move right
+	{AVK_NEXTWEAPON,					{SDL_SCANCODE_Z,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_RIGHT_TRIGGER,-1,-1,-1,-1,-1,-1,-1,-1}},		// Next weapon
+	{AVK_PREVWEAPON,					{SDL_SCANCODE_X,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_LEFT_TRIGGER,-1,-1,-1,-1,-1,-1,-1,-1}},		// Prev weapon
+	{AVK_SELECT | AVK_MENU_SELECT,		{SDL_SCANCODE_RETURN,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_A,-1,-1,-1,-1,-1,-1,-1,-1}},// Attack/Talk/Use
+	{AVK_PASSTURN,						{SDL_SCANCODE_C,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_X,-1,-1,-1,-1,-1,-1,-1,-1}},		// Pass Turn
+	{AVK_AUTOMAP,						{SDL_SCANCODE_TAB,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_Y,-1,-1,-1,-1,-1,-1,-1,-1}},	// Automap
+	{AVK_MENUOPEN | AVK_MENU_OPEN,		{SDL_SCANCODE_ESCAPE,IS_CONTROLLER_BUTTON | CONTROLLER_BUTTON_START,-1,-1,-1,-1,-1,-1,-1,-1}}	// Open menu/back
 };
 
 #include <stdarg.h> //va_list|va_start|va_end
@@ -167,38 +168,52 @@ int DoomRPG_freeMemory(void) { // 0x1EBFC
 	return Z_FreeMemory();
 }
 
+/* Shared by the game loop and held-input regression tests. */
+void DoomRPG_pollInput(DoomRPG_t* game, int mouse_Button, const Uint8* state)
+{
+    MenuSystem_t* menu = game->menuSystem;
+    if (menu->setBind) {
+        DoomRPG_setBind(game, mouse_Button, state);
+        menu->lastInputKey = 0;
+    } else if (menu->inputWaitRelease) {
+        if (Controls_inputReleased(state)) menu->inputWaitRelease = false;
+        menu->lastInputKey = 0;
+    } else {
+        int key = DoomRPG_getEventKey(mouse_Button, state);
+        if (key != menu->lastInputKey) {
+            menu->lastInputKey = key;
+            DoomCanvas_keyPressed(game->doomCanvas, key);
+        }
+    }
+}
+
 // New Function
 int DoomRPG_getEventKey(int mouse_Button, const Uint8* state) {
 
 	int i, j, key, num, buttomID;
 
 	key = AVK_UNDEFINED;
+    /* Fixed menu navigation cannot be removed by editing gameplay bindings. */
+    int pad = DoomRPG_controllerButton();
+    if (doomRpg && doomRpg->doomCanvas->state == ST_MENU) {
+        if (state[SDL_SCANCODE_ESCAPE]) return AVK_MENU_OPEN;
+        if (state[SDL_SCANCODE_RETURN]) return AVK_MENU_SELECT;
+        if (state[SDL_SCANCODE_UP]) return AVK_MENU_UP;
+        if (state[SDL_SCANCODE_DOWN]) return AVK_MENU_DOWN;
+        if (state[SDL_SCANCODE_LEFT]) return AVK_MENU_PAGE_UP;
+        if (state[SDL_SCANCODE_RIGHT]) return AVK_MENU_PAGE_DOWN;
+        int navigation = Controls_gamepadMenuKey(pad);
+        if (navigation) return navigation;
+    } else if (pad == CONTROLLER_BUTTON_START) {
+        return AVK_MENUOPEN | AVK_MENU_OPEN;
+    }
+
 
 	// KeyBoard
 	{
-		for (i = SDL_SCANCODE_1; i <= SDL_SCANCODE_0; ++i) {
-			if (state[i]) {
-				num = ((i - SDL_SCANCODE_0) + 10) % 10;
-				key = (AVK_0 + num);
-				break;
-			}
-		}
-
-		for (i = SDL_SCANCODE_KP_1; i <= SDL_SCANCODE_KP_0; ++i) {
-			if (state[i]) {
-				num = ((i - SDL_SCANCODE_KP_0) + 10) % 10;
-				key = (AVK_0 + num);
-				break;
-			}
-		}
-
-		if (key) {
-			return key;
-		}
-
 		for (i = 0; i < (sizeof(keyMapping) / sizeof(keyMapping_t)); ++i) {
 			for (j = 0; j < KEYBINDS_MAX; j++) {
-				if (!(keyMapping[i].keyBinds[j] & (IS_CONTROLLER_BUTTON | IS_MOUSE_BUTTON)))
+				if (keyMapping[i].keyBinds[j] >= 0 && keyMapping[i].keyBinds[j] < SDL_NUM_SCANCODES)
 				{
 					if (state[keyMapping[i].keyBinds[j]]) {
 						key = keyMapping[i].avk_action;
@@ -245,6 +260,28 @@ int DoomRPG_getEventKey(int mouse_Button, const Uint8* state) {
 		if (key) {
 			return key;
 		}
+		/* Number-key shortcuts only apply when the key is unbound. */
+		for (i = SDL_SCANCODE_1; i <= SDL_SCANCODE_0; ++i) {
+			if (state[i]) {
+				num = ((i - SDL_SCANCODE_0) + 10) % 10;
+				key = (AVK_0 + num);
+				break;
+			}
+		}
+
+		for (i = SDL_SCANCODE_KP_1; i <= SDL_SCANCODE_KP_0; ++i) {
+			if (state[i]) {
+				num = ((i - SDL_SCANCODE_KP_0) + 10) % 10;
+				key = (AVK_0 + num);
+				break;
+			}
+		}
+
+		if (key) {
+			return key;
+		}
+
+
 	}
 
 
@@ -303,12 +340,7 @@ int DoomRPG_getEventKey(int mouse_Button, const Uint8* state) {
 
 	// GameController/Joystick
 	{
-		if (sdlController.gGameController) {
-			buttomID = SDL_GameControllerGetButtonID();
-		}
-		else {
-			buttomID = SDL_JoystickGetButtonID();
-		}
+		buttomID = pad;
 
 		if (buttomID != -1) {
 			for (i = 0; i < (sizeof(keyMapping) / sizeof(keyMapping_t)); ++i) {
@@ -375,102 +407,18 @@ void DoomRPG_setDefaultBinds(DoomRPG_t* doomrpg)
 	SDL_memcpy(keyMappingTemp, keyMappingDefault, sizeof(keyMapping));
 }
 
-// New Function
-static void unBind(int* keyBinds, int index)
+int DoomRPG_controllerButton(void)
 {
-	int temp[KEYBINDS_MAX], next, i;
-
-	next = 0;
-	keyBinds[index] = -1;
-
-	// Reorder the list
-	for (i = 0; i < KEYBINDS_MAX; i++) {
-		temp[i] = -1;
-		if (keyBinds[i] == -1) {
-			continue;
-		}
-		temp[next++] = keyBinds[i];
-	}
-
-	SDL_memcpy(keyBinds, temp, sizeof(temp));
+    if (sdlController.gGameController && SDL_GameControllerGetAttached(sdlController.gGameController))
+        return SDL_GameControllerGetButtonID();
+    if (sdlController.gJoystick && SDL_JoystickGetAttached(sdlController.gJoystick))
+        return SDL_JoystickGetButtonID();
+    return CONTROLLER_BUTTON_INVALID;
 }
 
-// New Function
-static void setBind(int* keyBinds, int keycode)
+void DoomRPG_setBind(DoomRPG_t* doomrpg, int mouse_Button, const Uint8* state)
 {
-	int i;
-
-	// Examina si existe anteriormente, si es así, se desvinculará de la lista
-	// Examines whether it exists previously, if so, it will be unbind from the list
-	for (i = 0; i < KEYBINDS_MAX; i++) {
-		if (keyBinds[i] == keycode) {
-			unBind(keyBinds, i);
-			return;
-		}
-	}
-
-	// Se guarda el key code en la lista
-	// The key code is saved in the list
-	for (i = 0; i < KEYBINDS_MAX; i++) {
-		if (keyBinds[i] == -1) {
-			keyBinds[i] = keycode;
-			return;
-		}
-	}
-}
-
-// New Function
-void DoomRPG_setBind(DoomRPG_t* doomrpg, int mouse_Button, const Uint8* state) {
-	int i, keyMapId, buttomID;
-
-	// KeyBoard
-	{
-		for (i = 0; i < SDL_NUM_SCANCODES; ++i) {
-			if (state[i]) {
-				keyMapId = doomrpg->menuSystem->items[doomrpg->menuSystem->selectedIndex].action;
-				setBind(keyMappingTemp[keyMapId].keyBinds, i);
-				doomrpg->menuSystem->setBind = false;
-				doomrpg->menuSystem->paintMenu = true;
-				return;
-			}
-		}
-	}
-
-	// Mouse
-	if (mouse_Button != MOUSE_BUTTON_INVALID) {
-		keyMapId = doomrpg->menuSystem->items[doomrpg->menuSystem->selectedIndex].action;
-		setBind(keyMappingTemp[keyMapId].keyBinds, mouse_Button | IS_MOUSE_BUTTON);
-		doomrpg->menuSystem->setBind = false;
-		doomrpg->menuSystem->paintMenu = true;
-		return;
-	}
-
-	// GameController/Joystick
-	{
-		for (i = 0; i < SDL_NumJoysticks(); ++i) {
-			if (SDL_IsGameController(i))
-			{
-				buttomID = SDL_GameControllerGetButtonID();
-				if (buttomID != -1) {
-					break;
-				}
-			}
-			else
-			{
-				buttomID = SDL_JoystickGetButtonID();
-				if (buttomID != -1) {
-					break;
-				}
-			}
-		}
-
-		if (buttomID != -1) {
-			keyMapId = doomrpg->menuSystem->items[doomrpg->menuSystem->selectedIndex].action;
-			setBind(keyMappingTemp[keyMapId].keyBinds, buttomID | IS_CONTROLLER_BUTTON);
-			doomrpg->menuSystem->setBind = false;
-			doomrpg->menuSystem->paintMenu = true;
-		}
-	}
+    Controls_capture(doomrpg->menuSystem, mouse_Button, state);
 }
 
 int DoomRPG_Init(void) // 0x3141C
@@ -942,6 +890,7 @@ void DoomRPG_setClipTrue(DoomRPG_t* doomrpg, int x, int y, int w, int h)
 	clip.w = w;
 	clip.h = h;
 
+	clip = SDL_UIToFramebuffer(clip);
 	SDL_RenderSetClipRect(sdlVideo.renderer, &clip);
 	doomrpg->graphSetCliping = true;
 }
@@ -976,6 +925,7 @@ void DoomRPG_drawRect(DoomRPG_t* doomrpg, int x, int y, int w, int h)
 	rect.y = doomrpg->doomCanvas->displayRect.y + y;
 	rect.w = w + 1;
 	rect.h = h + 1;
+	rect = SDL_UIToFramebuffer(rect);
 	SDL_RenderDrawRect(sdlVideo.renderer, &rect);
 }
 
@@ -987,6 +937,7 @@ void DoomRPG_fillRect(DoomRPG_t* doomrpg, int x, int y, int w, int h)
 	rect.y = doomrpg->doomCanvas->displayRect.y + y;
 	rect.w = w;
 	rect.h = h;
+	rect = SDL_UIToFramebuffer(rect);
 	SDL_RenderFillRect(sdlVideo.renderer, &rect);
 }
 
@@ -994,14 +945,16 @@ void DoomRPG_drawCircle(DoomRPG_t* doomrpg, int x, int y, int r)
 {
 	int cx = doomrpg->doomCanvas->displayRect.x + x;
 	int cy = doomrpg->doomCanvas->displayRect.y + y;
-	SDL_RenderDrawCircle(sdlVideo.renderer, cx, cy, r);
+	SDL_Rect circle = SDL_UIToFramebuffer((SDL_Rect){cx, cy, r, r});
+	SDL_RenderDrawCircle(sdlVideo.renderer, circle.x, circle.y, circle.w);
 }
 
 void DoomRPG_fillCircle(DoomRPG_t* doomrpg, int x, int y, int r)
 {
 	int cx = doomrpg->doomCanvas->displayRect.x + x;
 	int cy = doomrpg->doomCanvas->displayRect.y + y;
-	SDL_RenderDrawFillCircle(sdlVideo.renderer, cx, cy, r);
+	SDL_Rect circle = SDL_UIToFramebuffer((SDL_Rect){cx, cy, r, r});
+	SDL_RenderDrawFillCircle(sdlVideo.renderer, circle.x, circle.y, circle.w);
 }
 
 void DoomRPG_drawLine(DoomRPG_t* doomrpg, int x1, int y1, int x2, int y2)
@@ -1011,7 +964,8 @@ void DoomRPG_drawLine(DoomRPG_t* doomrpg, int x1, int y1, int x2, int y2)
 	int ex = doomrpg->doomCanvas->displayRect.x + x2;
 	int ey = doomrpg->doomCanvas->displayRect.y + y2;
 
-	SDL_RenderDrawLine(sdlVideo.renderer, sx, sy, ex, ey);
+	SDL_Rect line = SDL_UIToFramebuffer((SDL_Rect){sx, sy, ex - sx, ey - sy});
+	SDL_RenderDrawLine(sdlVideo.renderer, line.x, line.y, line.x + line.w, line.y + line.h);
 }
 
 void DoomRPG_setFontColor(DoomRPG_t* doomrpg, int color)

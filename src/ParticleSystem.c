@@ -12,7 +12,7 @@
 #include "SDL_Video.h"
 
 int recalcScales(int val1, int val2) { // New code
-	int div = (sdlVideoModes[sdlVideo.resolutionIndex].width / 128);
+	int div = (sdlVideo.uiW / 128);
 	return val1 + (val1 - (((val1 << 16) / (val2 << 8)) / div));
 }
 
@@ -85,8 +85,8 @@ void ParticleSystem_calculateScales(ParticleSystem_t* particleSystem, int i)
 	w = 235; // (128 * 2) - 21
 	h = 174; // (88 * 2) - 2
 
-	//w = (recalcScales(235, particleSystem->doomRpg->render->screenWidth));
-	//h = (recalcScales(174, particleSystem->doomRpg->render->screenHeight));
+	//w = (recalcScales(235, particleSystem->doomRpg->doomCanvas->screenRect.w));
+	//h = (recalcScales(174, particleSystem->doomRpg->doomCanvas->screenRect.h));
 
 	if (i <= 1) {
 		particleSystem->scale = particleSystem->scaleSize = particleSystem->scaleX;
@@ -266,7 +266,7 @@ void ParticleSystem_render(ParticleSystem_t* particleSystem, int z)
 					}
 
 					int flags = 0;
-					if (sdlVideoModes[sdlVideo.resolutionIndex].width >= 640) {
+					if (sdlVideo.uiW >= 640) {
 						flags |= 64; // set flag SCALE
 					}
 
@@ -461,18 +461,28 @@ void ParticleSystem_startup(ParticleSystem_t* particleSystem)
 	}
 	particleSystem->particleCount = 0;
 
+	ParticleSystem_resize(particleSystem);
+}
+
+
+void ParticleSystem_resize(ParticleSystem_t* particleSystem)
+{
+    DoomRPG_t* doomRpg;
+    int w, h, gibSizeWH;
 	doomRpg = particleSystem->doomRpg;
 
+	DoomRPG_freeImage(doomRpg, &particleSystem->imgGibs);
+	DoomRPG_freeImage(doomRpg, &particleSystem->imgGibsBerserk);
 	w = 128;
 	h = 88;
 
-	if (sdlVideoModes[sdlVideo.resolutionIndex].width >= 320) {
-		w = recalcScales(128, doomRpg->render->screenWidth);
-		h = recalcScales(88, doomRpg->render->screenHeight);
+	if (sdlVideo.uiW >= 320) {
+		w = recalcScales(128, doomRpg->doomCanvas->screenRect.w);
+		h = recalcScales(88, doomRpg->doomCanvas->screenRect.h);
 	}
 
-	particleSystem->scaleX = ((doomRpg->render->screenWidth << FRACBITS) / (w << 8));
-	particleSystem->scaleY = ((doomRpg->render->screenHeight << FRACBITS) / (h << 8));
+	particleSystem->scaleX = ((doomRpg->doomCanvas->screenRect.w << FRACBITS) / (w << 8));
+	particleSystem->scaleY = ((doomRpg->doomCanvas->screenRect.h << FRACBITS) / (h << 8));
 
 	if (doomRpg->doomCanvas->displayRect.w < 160) {
 		DoomRPG_createImage(doomRpg, "gibs_16.bmp", true, &particleSystem->imgGibs);
@@ -491,4 +501,3 @@ void ParticleSystem_startup(ParticleSystem_t* particleSystem)
 	//printf("particleSystem->scaleY %d\n", particleSystem->scaleY);
 	//printf("particleSystem->gibSizeWH %d\n", particleSystem->gibSizeWH);
 }
-

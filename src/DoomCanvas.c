@@ -18,6 +18,7 @@
 #include "EntityDef.h"
 #include "Combat.h"
 #include "SDL_Video.h"
+#include "TextFields.h"
 
 static char processing[] = "Processing...";
 static char justAMoment[] = "(Just a moment!)";
@@ -121,8 +122,8 @@ DoomCanvas_t* DoomCanvas_init(DoomCanvas_t* doomCanvas, DoomRPG_t* doomRpg) // 0
 	doomCanvas->st_count = 0;
 	doomCanvas->clipRect.x = 0;
 	doomCanvas->clipRect.y = 0;
-	doomCanvas->clipRect.w = sdlVideo.rendererW;
-	doomCanvas->clipRect.h = sdlVideo.rendererH;
+	doomCanvas->clipRect.w = sdlVideo.uiW;
+	doomCanvas->clipRect.h = sdlVideo.uiH;
 	//printf("clipRect W(%d) H(%d)\n", doomCanvas->clipRect.w, doomCanvas->clipRect.h);
 
 	//From J2ME Version
@@ -336,6 +337,7 @@ void DoomCanvas_closeDialog(DoomCanvas_t* doomCanvas)
 {
 	Sound_stopSounds(doomCanvas->doomRpg->sound);
 	doomCanvas->dialogBuffer[0] = '\0';
+	doomCanvas->dialogSource[0] = '\0';
 	DoomCanvas_setState(doomCanvas, ST_PLAYING);
 	doomCanvas->hud->isUpdate = true;
 	doomCanvas->staleView = true;
@@ -420,7 +422,10 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 {
 	char text[8];
 	int strBeg, strEnd, strNxt, strLen;
-	int i, posY;
+	int i;
+	float posY;
+	int rows = TextFields_dialogRows();
+	float lineHeight = 12 * TextFields_scale();
 	boolean strblink;
 
 	doomCanvas->isUpdateView = true;
@@ -501,7 +506,7 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	}
 
 	posY = doomCanvas->displayRect.h - 52;
-	for (i = 0; i < 4 && doomCanvas->currentDialogLine + i < doomCanvas->numDialogLines; ++i) {
+	for (i = 0; i < rows && doomCanvas->currentDialogLine + i < doomCanvas->numDialogLines; ++i) {
 		strBeg = doomCanvas->dialogIndexes[((doomCanvas->currentDialogLine + i) * 2) + 0];
 		strNxt = doomCanvas->dialogIndexes[((doomCanvas->currentDialogLine + i) * 2) + 1];
 		strEnd = 0;
@@ -516,24 +521,24 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 		else if (i < doomCanvas->dialogTypeLineIdx) {
 			strEnd = strNxt;
 		}
-		DoomCanvas_drawFont(doomCanvas, doomCanvas->dialogBuffer, doomCanvas->SCR_CX - 64, posY, 0, strBeg, strEnd, 0);
+		TextFields_draw(doomCanvas, doomCanvas->dialogBuffer, doomCanvas->SCR_CX - 64, posY, 0, strBeg, strEnd);
 
-		posY += 12;
+		posY += lineHeight;
 	}
 
 	if (doomCanvas->state == ST_DIALOGPASSWORD && doomCanvas->dialogTypeLineIdx == doomCanvas->numDialogLines) {
-		DoomCanvas_drawString2(doomCanvas, 
+		TextFields_draw(doomCanvas,
 			doomCanvas->strPassCode, 
-			(doomCanvas->SCR_CX - 64) + ((doomCanvas->dialogIndexes[((doomCanvas->numDialogLines - 1) * 2) + 1] + 1) * 7),
+			(doomCanvas->SCR_CX - 64) + ((doomCanvas->dialogIndexes[((doomCanvas->numDialogLines - 1) * 2) + 1] + 1) * 7 * TextFields_scale()),
 			//doomCanvas->SCR_CX + (doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) - 1] * 7) - 57,
-			posY - 12, 0, -1);
+			posY - lineHeight, 0, 0, -1);
 	}
-	if (doomCanvas->numDialogLines > 4) {
-		if (doomCanvas->currentDialogLine + 4 == doomCanvas->numDialogLines) {
+	if (doomCanvas->numDialogLines > rows) {
+		if (doomCanvas->currentDialogLine + rows == doomCanvas->numDialogLines) {
 			DoomCanvas_drawScrollBar(doomCanvas, doomCanvas->displayRect.h - 54, 53, doomCanvas->currentDialogLine, doomCanvas->numDialogLines, doomCanvas->numDialogLines);
 		}
 		else {
-			DoomCanvas_drawScrollBar(doomCanvas, doomCanvas->displayRect.h - 54, 53, doomCanvas->currentDialogLine, doomCanvas->currentDialogLine + 4, doomCanvas->numDialogLines + 4);
+			DoomCanvas_drawScrollBar(doomCanvas, doomCanvas->displayRect.h - 54, 53, doomCanvas->currentDialogLine, doomCanvas->currentDialogLine + rows, doomCanvas->numDialogLines + rows);
 		}
 	}
 }
@@ -1243,18 +1248,10 @@ void DoomCanvas_drawRGB(DoomCanvas_t* doomCanvas)
 	clip.w = doomCanvas->render->screenWidth;
 	clip.h = doomCanvas->render->screenHeight;
 
-	renderQuad.x = doomCanvas->render->screenX;
-	renderQuad.y = doomCanvas->render->screenY;
-	renderQuad.w = sdlVideo.rendererW;
-	renderQuad.h = sdlVideo.rendererH;
-	if (clip.w <= renderQuad.w) {
-		renderQuad.w = clip.w;
-	}
-	if (clip.h <= renderQuad.h) {
-		renderQuad.h = clip.h;
-	}
+	renderQuad = doomCanvas->render->uiViewport;
 
-	SDL_UpdateTexture(doomCanvas->render->piDIB, NULL, doomCanvas->render->framebuffer, sdlVideo.rendererW * 2);
+	renderQuad = SDL_UIToFramebuffer(renderQuad);
+	SDL_UpdateTexture(doomCanvas->render->piDIB, NULL, doomCanvas->render->framebuffer, doomCanvas->render->pitch);
 	SDL_RenderCopy(sdlVideo.renderer, doomCanvas->render->piDIB, &clip, &renderQuad);
 
 	//DoomRPG_flushGraphics(doomCanvas->doomRpg);
@@ -1321,7 +1318,8 @@ void DoomCanvas_drawImageSpecial(DoomCanvas_t* doomCanvas, Image_t* img, int xSr
 					renderQuad.h = (renderQuad.h * 3) / 2;
 				}
 
-				SDL_RenderCopy(sdlVideo.renderer, img->imgBitmap, &clip, &renderQuad);
+				SDL_Rect scaledQuad = SDL_UIToFramebuffer(renderQuad);
+				SDL_RenderCopy(sdlVideo.renderer, img->imgBitmap, &clip, &scaledQuad);
 
 				uVar3 = uVar3 - img->width;
 				iVar4 = img->width + iVar4;
@@ -1648,18 +1646,19 @@ int DoomCanvas_getKeyAction(DoomCanvas_t* doomCanvas, int i) {
 void DoomCanvas_handleDialogEvents(DoomCanvas_t* doomCanvas, int i)
 {
 	int key;
+	int rows = TextFields_dialogRows();
 
 	key = DoomCanvas_getKeyAction(doomCanvas, i);
 
 	if (key == SELECT || key == 15) {
-		if (doomCanvas->dialogTypeLineIdx < 4 && doomCanvas->dialogTypeLineIdx < doomCanvas->numDialogLines - doomCanvas->currentDialogLine) {
-			doomCanvas->dialogTypeLineIdx = 4;
+		if (doomCanvas->dialogTypeLineIdx < rows && doomCanvas->dialogTypeLineIdx < doomCanvas->numDialogLines - doomCanvas->currentDialogLine) {
+			doomCanvas->dialogTypeLineIdx = rows;
 			return;
 		}
-		if (doomCanvas->currentDialogLine < doomCanvas->numDialogLines - 4) {
+		if (doomCanvas->currentDialogLine < doomCanvas->numDialogLines - rows) {
 			doomCanvas->dialogLineStartTime = doomCanvas->time;
 			doomCanvas->dialogTypeLineIdx = 0;
-			doomCanvas->currentDialogLine += 4;
+			doomCanvas->currentDialogLine += rows;
 			return;
 		}
 
@@ -1676,12 +1675,12 @@ void DoomCanvas_handleDialogEvents(DoomCanvas_t* doomCanvas, int i)
 	}
 	else if (key == MOVEBACK) {
 		++doomCanvas->currentDialogLine;
-		if (doomCanvas->currentDialogLine <= doomCanvas->numDialogLines - 4) {
+		if (doomCanvas->currentDialogLine <= doomCanvas->numDialogLines - rows) {
 			doomCanvas->dialogLineStartTime = doomCanvas->time;
-			doomCanvas->dialogTypeLineIdx = 3;
+			doomCanvas->dialogTypeLineIdx = rows - 1;
 			return;
 		}
-		doomCanvas->currentDialogLine = doomCanvas->numDialogLines - 4;
+		doomCanvas->currentDialogLine = doomCanvas->numDialogLines - rows;
 		if (doomCanvas->currentDialogLine < 0) {
 			doomCanvas->currentDialogLine = 0;
 		}
@@ -2642,24 +2641,7 @@ void DoomCanvas_prepareDialog(DoomCanvas_t* doomCanvas, char* str, boolean dialo
 {
 	int strLen, i, j;
 
-	i = 0;
-	j = 0;
-	doomCanvas->numDialogLines = 0;
-	strncpy(doomCanvas->dialogBuffer, str, sizeof(doomCanvas->dialogBuffer));
-
-	strLen = SDL_strlen(doomCanvas->dialogBuffer);
-	while (j < strLen) {
-		if (str[j] == '|') {
-			doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) + 0] = (short)i;
-			doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) + 1] = (short)(j - i);
-			doomCanvas->numDialogLines++;
-			i = j + 1;
-		}
-		++j;
-	}
-	doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) + 0] = (short)i;
-	doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) + 1] = (short)(strLen - i);
-	doomCanvas->numDialogLines++;
+	TextFields_prepareDialog(doomCanvas, str);
 
 	if (doomCanvas->state == ST_DIALOGPASSWORD) {
 		strLen = SDL_strlen(doomCanvas->game->passCode);
@@ -3331,28 +3313,11 @@ void DoomCanvas_vibrate(DoomCanvas_t* doomCanvas, int i)
 	}
 }
 
-void DoomCanvas_startup(DoomCanvas_t* doomCanvas)
+void DoomCanvas_layout(DoomCanvas_t* doomCanvas)
 {
-	//Customs
-	int viewSize;
-	int frames;
-	int map;
-	//-------
-	int width, height;
-	int displayH, clipH, deltaH;
-	int softKeyY;
-	DoomRPG_t* doomRpg;
-
-	doomRpg = doomCanvas->doomRpg;
-	doomCanvas->render = doomRpg->render;
-	doomCanvas->player = doomRpg->player;
-	doomCanvas->game = doomRpg->game;
-	doomCanvas->entityDef = doomRpg->entityDef;
-	doomCanvas->combat = doomRpg->combat;
-	doomCanvas->hud = doomRpg->hud;
-	doomCanvas->menuSystem = doomRpg->menuSystem;
-	doomCanvas->particleSystem = doomRpg->particleSystem;
-
+    int viewSize, width, height, displayH, clipH, deltaH, softKeyY;
+    DoomRPG_t* doomRpg = doomCanvas->doomRpg;
+	doomCanvas->displaySoftKeys = false;
 	doomCanvas->displayRect.w = 0;
 	doomCanvas->displayRect.h = 0;
 
@@ -3382,6 +3347,7 @@ void DoomCanvas_startup(DoomCanvas_t* doomCanvas)
 	doomCanvas->softKeyY = doomCanvas->clipRect.h - 20;
 	doomCanvas->largeStatus = (doomCanvas->displayRect.w >= 176) ? true : false;
 
+	Hud_free(doomCanvas->hud, false);
 	Hud_startup(doomCanvas->hud, doomCanvas->largeStatus);
 
 	displayH = doomCanvas->displayRect.h;
@@ -3440,6 +3406,32 @@ void DoomCanvas_startup(DoomCanvas_t* doomCanvas)
 	if ((doomCanvas->displayRect.y + doomCanvas->displayRect.h) == softKeyY) {
 		doomCanvas->softKeyY = softKeyY;
 	}
+
+}
+
+void DoomCanvas_startup(DoomCanvas_t* doomCanvas)
+{
+	//Customs
+	int viewSize;
+	int frames;
+	int map;
+	//-------
+	int width, height;
+	int displayH, clipH, deltaH;
+	int softKeyY;
+	DoomRPG_t* doomRpg;
+
+	doomRpg = doomCanvas->doomRpg;
+	doomCanvas->render = doomRpg->render;
+	doomCanvas->player = doomRpg->player;
+	doomCanvas->game = doomRpg->game;
+	doomCanvas->entityDef = doomRpg->entityDef;
+	doomCanvas->combat = doomRpg->combat;
+	doomCanvas->hud = doomRpg->hud;
+	doomCanvas->menuSystem = doomRpg->menuSystem;
+	doomCanvas->particleSystem = doomRpg->particleSystem;
+
+	DoomCanvas_layout(doomCanvas);
 
 	// DOOMRPG-FRAMES
 	frames = 0;
@@ -3555,8 +3547,8 @@ void DoomCanvas_updateLoadingBar(DoomCanvas_t* doomCanvas)
 
 		//int i = doomCanvas->SCR_CX - 17;
 		//int i2 = doomCanvas->SCR_CY - 4;
-		x = (sdlVideo.rendererW / 2) - 17;
-		y = (sdlVideo.rendererH / 2) - 4;
+		x = (sdlVideo.uiW / 2) - 17;
+		y = (sdlVideo.uiH / 2) - 4;
 
 		DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
 		DoomRPG_clearGraphics(doomCanvas->doomRpg);
