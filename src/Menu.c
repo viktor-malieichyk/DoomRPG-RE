@@ -1009,8 +1009,16 @@ void Menu_initMenu(Menu_t* menu, int i)
 			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "IntScaling:", sdlVideo.integerScaling ? "on" : "off", 0, 0);
 			textDivider = MenuSystem_buildDivider(menuSystem, "Resolution");
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], textDivider, 3, 0);
+#ifdef DOOMRPG_IOS
+            /* Keep indices stable for the shared menu handler. */
+            menuSystem->items[1].flags = 3;
+            menuSystem->items[3].flags = 3;
+            SDL_snprintf(text, sizeof(text), "Auto %dx%d", sdlVideo.rendererW, sdlVideo.rendererH);
+            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], text, NULL, 3, 0);
+#else
 			SDL_snprintf(text, sizeof(text), "(%dx%d)", sdlVideoModes[sdlVideo.resolutionIndex].width, sdlVideoModes[sdlVideo.resolutionIndex].height);
 			MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], text, NULL, 2, 0);
+#endif
 
 			textDivider = MenuSystem_buildDivider(menuSystem, "Display");
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], textDivider, 3, 0);

@@ -19,12 +19,11 @@ boolean VideoOptions_fullscreen(boolean enabled)
     return true;
 }
 
-boolean VideoOptions_resolution(DoomRPG_t* game, int index)
+static boolean resizeFramebuffer(DoomRPG_t* game, int index, int width, int height)
 {
     if (index < 0 || index >= SDL_VIDEO_MODE_COUNT) return false;
     Render_t* render = game->render;
     DoomCanvas_t* canvas = game->doomCanvas;
-    int width = sdlVideoModes[index].width, height = sdlVideoModes[index].height;
     int pitch = (width * 2 + 3) & ~3;
     SDL_Texture* texture = SDL_CreateTexture(sdlVideo.renderer, SDL_PIXELFORMAT_RGB565, SDL_TEXTUREACCESS_STREAMING, width, height);
     if (!texture) return false;
@@ -46,11 +45,13 @@ boolean VideoOptions_resolution(DoomRPG_t* game, int index)
     sdlVideo.rendererH = height;
     SDL_ConfigureUISize();
     SDL_RenderSetIntegerScale(sdlVideo.renderer, sdlVideo.integerScaling);
+    #ifndef DOOMRPG_IOS
     if (sdlVideo.window) {
         SDL_SetWindowMinimumSize(sdlVideo.window, 128, 128);
         SDL_SetWindowSize(sdlVideo.window, width, height);
         SDL_SetWindowMinimumSize(sdlVideo.window, width, height);
     }
+    #endif
     DoomRPG_setClipFalse(game);
     canvas->clipRect.w = sdlVideo.uiW;
     canvas->clipRect.h = sdlVideo.uiH;
@@ -79,3 +80,24 @@ boolean VideoOptions_resolution(DoomRPG_t* game, int index)
     DoomRPG_clearGraphics(game);
     return true;
 }
+
+boolean VideoOptions_resolution(DoomRPG_t* game, int index)
+{
+    if (index < 0 || index >= SDL_VIDEO_MODE_COUNT) return false;
+#ifdef DOOMRPG_IOS
+    return VideoOptions_mobileLayout(game);
+#else
+    return resizeFramebuffer(game, index, sdlVideoModes[index].width, sdlVideoModes[index].height);
+#endif
+}
+
+#ifdef DOOMRPG_IOS
+boolean VideoOptions_mobileLayout(DoomRPG_t* game)
+{
+    int width, height;
+    SDL_LandscapeSize(&width, &height);
+    sdlVideo.integerScaling = false;
+    if (width == sdlVideo.rendererW && height == sdlVideo.rendererH) return true;
+    return resizeFramebuffer(game, 11, width, height);
+}
+#endif

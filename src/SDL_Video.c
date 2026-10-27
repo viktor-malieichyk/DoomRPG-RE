@@ -39,6 +39,19 @@ SDLVidModes_t sdlVideoModes[SDL_VIDEO_MODE_COUNT] =
 	{3840, 2160}
 };
 
+#ifdef DOOMRPG_IOS
+void SDL_LandscapeSize(int* width, int* height)
+{
+    int w = 640, h = 360;
+    if (sdlVideo.window) SDL_GetWindowSize(sdlVideo.window, &w, &h);
+    /* Ignore transient portrait bounds while UIKit rotates the landscape app. */
+    if (w < h) { int swap = w; w = h; h = swap; }
+    *height = 360;
+    *width = h > 0 ? ((int)(360.0 * w / h + 0.5)) & ~1 : 640;
+    *width = SDL_clamp(*width, 480, 1600);
+}
+#endif
+
 void SDL_InitVideo(void)
 {
 	Uint32 flags;
@@ -64,6 +77,9 @@ void SDL_InitVideo(void)
     flags = SDL_WINDOW_OPENGL| SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE;
     video_w = sdlVideoModes[sdlVideo.resolutionIndex].width;
     video_h = sdlVideoModes[sdlVideo.resolutionIndex].height;
+#ifdef DOOMRPG_IOS
+    SDL_LandscapeSize(&video_w, &video_h);
+#endif
 
 	SDL_SetHint(SDL_HINT_MOUSE_AUTO_CAPTURE, "0");
 	SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -95,6 +111,9 @@ void SDL_InitVideo(void)
 
 	sdlVideo.rendererW = sdlVideoModes[sdlVideo.resolutionIndex].width;
 	sdlVideo.rendererH = sdlVideoModes[sdlVideo.resolutionIndex].height;
+#ifdef DOOMRPG_IOS
+    SDL_LandscapeSize(&sdlVideo.rendererW, &sdlVideo.rendererH);
+#endif
 
     // Since we are going to display a low resolution buffer,
     // it is best to limit the window size so that it cannot

@@ -3,4 +3,7 @@
 struct DoomRPG_s;
 boolean VideoOptions_resolution(struct DoomRPG_s* game, int index);
 boolean VideoOptions_fullscreen(boolean enabled);
+#ifdef DOOMRPG_IOS
+boolean VideoOptions_mobileLayout(struct DoomRPG_s* game);
+#endif
 #endif

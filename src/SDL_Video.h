@@ -24,6 +24,9 @@ void SDL_InitVideo(void);
 void SDL_Close(void);
 void SDL_RefreshController(void);
 void SDL_ConfigureUISize(void);
+#ifdef DOOMRPG_IOS
+void SDL_LandscapeSize(int* width, int* height);
+#endif
 SDL_Rect SDL_UIToFramebuffer(SDL_Rect rect);
 SDLVideo_t* SDL_GetVideo(void);
 void SDL_RenderDrawFillCircle(SDL_Renderer* renderer, int x, int y, int r);

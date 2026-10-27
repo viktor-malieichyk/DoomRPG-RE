@@ -18,6 +18,7 @@
 #include "SDL_Video.h"
 #include "Z_Zip.h"
 #include "Controls.h"
+#include "VideoOptions.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -135,6 +136,7 @@ static void GameFrame(void* unused)
 
 #ifdef DOOMRPG_IOS
         if (IOS_Paused()) return;
+        VideoOptions_mobileLayout(doomRpg);
         int outputW = 0, outputH = 0;
         if (SDL_GetRendererOutputSize(sdlVideo.renderer, &outputW, &outputH) == 0 &&
             outputW > 0 && outputH > 0 &&

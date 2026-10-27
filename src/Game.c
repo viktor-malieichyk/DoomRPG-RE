@@ -811,6 +811,11 @@ void Game_loadConfig(Game_t* game)
 	if (rw) {
 		SDL_RWclose(rw);
 	}
+#ifdef DOOMRPG_IOS
+    /* Desktop video preferences must not constrain the iPhone landscape view. */
+    sdlVideo.integerScaling = false;
+    sdlVideo.resolutionIndex = 11; /* 640x360 fallback; actual size follows UIKit. */
+#endif
 }
 
 void Game_loadMapEntities(Game_t* game)
