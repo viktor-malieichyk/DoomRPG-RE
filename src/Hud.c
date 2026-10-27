@@ -220,7 +220,7 @@ void Hud_drawBottomBar(Hud_t* hud)
 
         if (weapon == 0) {
             DoomCanvas_drawImageSpecial(doomCanvas, img, 0, hud->iconSheetHeight << 1, hud->iconSheetWidth, hud->iconSheetHeight, 0, hud->statusAmmoXpos + cx, dy, 0x24);
-            strncpy(hud->ammoNum, "--", 4);
+            SDL_strlcpy(hud->ammoNum, "--", sizeof(hud->ammoNum));
         }
         else {
             combat = hud->doomRpg->combat;

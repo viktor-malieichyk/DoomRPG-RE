@@ -327,12 +327,16 @@ void SDL_InitAudio(void)
 		DoomRPG_Error("Cannot find the soundfont %s file", "gm.sf2");
 	}
 
+	#ifdef DOOMRPG_IOS
+	if (Mix_OpenAudioDevice(44100, MIX_DEFAULT_FORMAT, 2, 2048, NULL, 0) < 0) {
+#else
 	if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+#endif
 		DoomRPG_Error("Could not initialize SDL Mixer: %s", Mix_GetError());
 	}
 }
 
-void SDL_CloseAudio(void) {
+void DoomRPG_CloseAudio(void) {
 
 	delete_fluid_audio_driver(fluidSynth.adriver);
 	delete_fluid_synth(fluidSynth.synth);

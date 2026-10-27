@@ -425,6 +425,8 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	int i;
 	float posY;
 	int rows = TextFields_dialogRows();
+    int fieldWidth = TextFields_dialogWidth(doomCanvas);
+    int fieldLeft = TextFields_dialogLeft(doomCanvas);
 	float lineHeight = 12 * TextFields_scale();
 	boolean strblink;
 
@@ -464,7 +466,7 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	}
 
 	DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
-	DoomRPG_fillRect(doomCanvas->doomRpg, doomCanvas->SCR_CX - 64, doomCanvas->displayRect.h - 54, 128, 54);
+	DoomRPG_fillRect(doomCanvas->doomRpg, fieldLeft, doomCanvas->displayRect.h - 54, fieldWidth, 54);
 
 	if (doomCanvas->player->facingEntity != NULL && 
 		doomCanvas->player->facingEntity->def->eType == 7 && 
@@ -478,15 +480,15 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	if (doomCanvas->displayRect.w <= 128) {
 
 		DoomRPG_drawLine(doomCanvas->doomRpg, 
-			doomCanvas->SCR_CX - 64, doomCanvas->displayRect.h - 55, 
-			doomCanvas->SCR_CX + 63, doomCanvas->displayRect.h - 55);
+			fieldLeft, doomCanvas->displayRect.h - 55,
+			fieldLeft + fieldWidth - 1, doomCanvas->displayRect.h - 55);
 
 		DoomRPG_drawLine(doomCanvas->doomRpg,
-			doomCanvas->SCR_CX - 64, doomCanvas->displayRect.h - 1,
-			doomCanvas->SCR_CX + 63, doomCanvas->displayRect.h - 1);
+			fieldLeft, doomCanvas->displayRect.h - 1,
+			fieldLeft + fieldWidth - 1, doomCanvas->displayRect.h - 1);
 	}
 	else {
-		DoomRPG_drawRect(doomCanvas->doomRpg, doomCanvas->SCR_CX - 65, doomCanvas->displayRect.h - 55, 129, 54);
+		DoomRPG_drawRect(doomCanvas->doomRpg, SDL_max(0, fieldLeft - 1), doomCanvas->displayRect.h - 55, SDL_min(fieldWidth + 1, doomCanvas->displayRect.w - 1), 54);
 	}
 
 	if (doomCanvas->state == ST_DIALOGPASSWORD) {
@@ -521,7 +523,7 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 		else if (i < doomCanvas->dialogTypeLineIdx) {
 			strEnd = strNxt;
 		}
-		TextFields_draw(doomCanvas, doomCanvas->dialogBuffer, doomCanvas->SCR_CX - 64, posY, 0, strBeg, strEnd);
+		TextFields_draw(doomCanvas, doomCanvas->dialogBuffer, fieldLeft, posY, 0, strBeg, strEnd);
 
 		posY += lineHeight;
 	}
@@ -529,7 +531,7 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	if (doomCanvas->state == ST_DIALOGPASSWORD && doomCanvas->dialogTypeLineIdx == doomCanvas->numDialogLines) {
 		TextFields_draw(doomCanvas,
 			doomCanvas->strPassCode, 
-			(doomCanvas->SCR_CX - 64) + ((doomCanvas->dialogIndexes[((doomCanvas->numDialogLines - 1) * 2) + 1] + 1) * 7 * TextFields_scale()),
+			(fieldLeft) + ((doomCanvas->dialogIndexes[((doomCanvas->numDialogLines - 1) * 2) + 1] + 1) * 7 * TextFields_scale()),
 			//doomCanvas->SCR_CX + (doomCanvas->dialogIndexes[(doomCanvas->numDialogLines * 2) - 1] * 7) - 57,
 			posY - lineHeight, 0, 0, -1);
 	}
@@ -1335,6 +1337,9 @@ void DoomCanvas_drawImageSpecial(DoomCanvas_t* doomCanvas, Image_t* img, int xSr
 void DoomCanvas_drawScrollBar(DoomCanvas_t* doomCanvas, int y, int totalHeight, int i3, int i4, int i5)
 {
 	int i6 = i4 - i3;
+    int right = doomCanvas->SCR_CX + 64;
+    if (doomCanvas->state == ST_DIALOG || doomCanvas->state == ST_DIALOGPASSWORD)
+        right = TextFields_dialogLeft(doomCanvas) + TextFields_dialogWidth(doomCanvas);
 	if (i6 != 0) {
 		int barHeight = totalHeight / (((i5 + i6) - 1) / i6);
 		int offSetY = (((i3 << 16) / ((i5 - 1) << 8)) * ((totalHeight - barHeight) << 8)) >> 16;
@@ -1343,18 +1348,18 @@ void DoomCanvas_drawScrollBar(DoomCanvas_t* doomCanvas, int y, int totalHeight, 
 		}
 		int barOffset_y = offSetY + 7;
 
-		DoomCanvas_drawImageSpecial(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgArrowUpDown, 0, 0, 7, 7, 0, doomCanvas->SCR_CX + 64, y, 9);
-		DoomCanvas_drawImageSpecial(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgArrowUpDown, 0, 7, 7, 7, 0, doomCanvas->SCR_CX + 64, y + totalHeight, 10);
+		DoomCanvas_drawImageSpecial(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgArrowUpDown, 0, 0, 7, 7, 0, right, y, 9);
+		DoomCanvas_drawImageSpecial(doomCanvas, &doomCanvas->doomRpg->menuSystem->imgArrowUpDown, 0, 7, 7, 7, 0, right, y + totalHeight, 10);
 
 		DoomRPG_setColor(doomCanvas->doomRpg, 0x888888);
-		DoomRPG_fillRect(doomCanvas->doomRpg, (doomCanvas->SCR_CX + 64) - 7, y + 7, 7, totalHeight - 14);
+		DoomRPG_fillRect(doomCanvas->doomRpg, (right) - 7, y + 7, 7, totalHeight - 14);
 
 		DoomRPG_setColor(doomCanvas->doomRpg, 0xDDDDDD);
-		DoomRPG_fillRect(doomCanvas->doomRpg, (doomCanvas->SCR_CX + 64) - 7, y + barOffset_y, 7, barHeight);
+		DoomRPG_fillRect(doomCanvas->doomRpg, (right) - 7, y + barOffset_y, 7, barHeight);
 
 		DoomRPG_setColor(doomCanvas->doomRpg, 0x000000);
-		DoomRPG_drawRect(doomCanvas->doomRpg, (doomCanvas->SCR_CX + 64) - 7, y + barOffset_y, 6, barHeight - 1);
-		DoomRPG_drawRect(doomCanvas->doomRpg, (doomCanvas->SCR_CX + 64) - 7, y, 6, totalHeight - 1);
+		DoomRPG_drawRect(doomCanvas->doomRpg, (right) - 7, y + barOffset_y, 6, barHeight - 1);
+		DoomRPG_drawRect(doomCanvas->doomRpg, (right) - 7, y, 6, totalHeight - 1);
 	}
 
 }

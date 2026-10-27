@@ -13,7 +13,8 @@ typedef struct SDLVideo_s
 	boolean vSync;
 	boolean integerScaling;
 	boolean displaySoftKeys;
-	boolean compactText;
+	int textSize; /* 0:100%, 1:75%, 2:60%, 3:50%. */
+	boolean wideText;
 	int resolutionIndex;
 } SDLVideo_t;
 
@@ -41,7 +42,7 @@ typedef struct FluidSynth_s
 extern FluidSynth_t fluidSynth;
 
 void SDL_InitAudio(void);
-void SDL_CloseAudio(void);
+void DoomRPG_CloseAudio(void);
 
 //-----
 typedef struct SDLController_s

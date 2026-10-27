@@ -95,3 +95,12 @@ all passed. Main and Options screenshots were reviewed at 320x240 and 1280x720.
 Binary releases provide a patch executable and a ZIP containing the executable,
 launcher, license and installation notes. Apply these to an existing working
 Windows port folder; original game assets and dependency DLLs are not bundled.
+
+## Text field layout
+
+Options now offers Text size (100%, 75%, 60%, 50%) and Wide fields (on/off).
+Wide fields expands dialogue boxes, their text wrapping and scrollbar to the full
+game display width. Text size applies to dialogue and top-bar message text; native
+font pixel size is retained at low resolutions. Both settings update immediately
+and persist. Existing compact-text-on configurations migrate to 50%. Older builds
+can still read the original boolean extension.

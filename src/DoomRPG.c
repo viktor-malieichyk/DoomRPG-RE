@@ -51,6 +51,7 @@ void DoomRPG_Error(const char* fmt, ...) // 0x1C648
 	va_end(ap);
 
 	printf("%s", errMsg);
+    SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", errMsg);
 
 	const SDL_MessageBoxButtonData buttons[] = {
 		{ /* .flags, .buttonid, .text */        0, 0, "Ok" },
@@ -71,7 +72,7 @@ void DoomRPG_Error(const char* fmt, ...) // 0x1C648
 	};
 	const SDL_MessageBoxData messageboxdata = {
 		SDL_MESSAGEBOX_ERROR, /* .flags */
-		NULL, /* .window */
+		sdlVideo.window, /* .window */
 		"DoomRPG Error", /* .title */
 		errMsg, /* .message */
 		SDL_arraysize(buttons), /* .numbuttons */
@@ -82,7 +83,7 @@ void DoomRPG_Error(const char* fmt, ...) // 0x1C648
 	SDL_ShowMessageBox(&messageboxdata, NULL);
 	closeZipFile(&zipFile);
 	DoomRPG_FreeAppData(doomRpg);
-	SDL_CloseAudio();
+	DoomRPG_CloseAudio();
 	SDL_Close();
 	exit(0);
 
@@ -1120,10 +1121,10 @@ void File_writeInt(SDL_RWops* rw, int i)
 }
 void File_writeLong(SDL_RWops* rw, int i)
 {
-	long lData;
+	Uint32 lData = 0;
 	lData = SDL_SwapLE32(i);
 	if (rw) {
-		SDL_RWwrite(rw, &lData, sizeof(long), 1);
+		SDL_RWwrite(rw, &lData, sizeof(lData), 1);
 	}
 }
 
@@ -1173,10 +1174,10 @@ int File_readInt(SDL_RWops* rw)
 
 int File_readLong(SDL_RWops* rw)
 {
-	long lData;
+	Uint32 lData = 0;
 
 	if (rw) {
-		SDL_RWread(rw, &lData, sizeof(long), 1);
+		SDL_RWread(rw, &lData, sizeof(lData), 1);
 	}
 
 	return (int)SDL_SwapLE32(lData);

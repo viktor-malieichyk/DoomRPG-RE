@@ -7,9 +7,27 @@
 
 float TextFields_scale(void)
 {
-    if (!sdlVideo.compactText || sdlVideo.rendererH <= 0) return 1.0f;
-    /* Never make a font smaller than its original native pixel size. */
-    return SDL_min(1.0f, SDL_max(0.5f, sdlVideo.uiH / (float)sdlVideo.rendererH));
+    static const float sizes[] = {1.0f, 0.75f, 0.60f, 0.50f};
+    int size = SDL_clamp(sdlVideo.textSize, 0, 3);
+    if (sdlVideo.rendererH <= 0) return 1.0f;
+    /* Keep at least one framebuffer pixel per source-font pixel. */
+    return SDL_min(1.0f, SDL_max(sizes[size], sdlVideo.uiH / (float)sdlVideo.rendererH));
+}
+
+const char* TextFields_sizeLabel(void)
+{
+    static const char* labels[] = {"100%", "75%", "60%", "50%"};
+    return labels[SDL_clamp(sdlVideo.textSize, 0, 3)];
+}
+
+int TextFields_dialogWidth(DoomCanvas_t* canvas)
+{
+    return sdlVideo.wideText ? canvas->displayRect.w : SDL_min(128, canvas->displayRect.w);
+}
+
+int TextFields_dialogLeft(DoomCanvas_t* canvas)
+{
+    return (canvas->displayRect.w - TextFields_dialogWidth(canvas)) / 2;
 }
 
 int TextFields_dialogRows(void)
@@ -54,7 +72,7 @@ void TextFields_prepareDialog(DoomCanvas_t* canvas, const char* text)
     char source[sizeof(canvas->dialogSource)];
     SDL_strlcpy(source, text, sizeof(source));
     SDL_strlcpy(canvas->dialogSource, source, sizeof(canvas->dialogSource));
-    boolean compact = TextFields_scale() < 1 && canvas->state != ST_DIALOGPASSWORD;
+    boolean compact = (TextFields_scale() < 1 || sdlVideo.wideText) && canvas->state != ST_DIALOGPASSWORD;
     int used = 0;
     for (int i = 0; source[i] && used < (int)sizeof(canvas->dialogBuffer) - 1; ++i) {
         char c = source[i];
@@ -66,7 +84,7 @@ void TextFields_prepareDialog(DoomCanvas_t* canvas, const char* text)
     }
     canvas->dialogBuffer[used] = '\0';
     /* Leave seven pixels for the scrollbar and account for glyph overhang. */
-    int columns = SDL_max(1, (int)((121 - 2 * TextFields_scale()) / (7 * TextFields_scale())));
+    int columns = SDL_max(1, (int)((TextFields_dialogWidth(canvas) - 7 - 2 * TextFields_scale()) / (7 * TextFields_scale())));
     int start = 0;
     canvas->numDialogLines = 0;
     do {

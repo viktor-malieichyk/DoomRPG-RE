@@ -110,8 +110,9 @@ void Menu_setNotes(Menu_t* menu)
 			nbStr = (char*)0x0;
 		}
 		else {
-			strncpy(text, nbStr, (int)(tmpStr - (int)nbStr));
-			text[(int)(tmpStr -(int)nbStr)] = '\0';
+			size_t length = SDL_min((size_t)(tmpStr - nbStr), sizeof(text) - 1);
+			SDL_memcpy(text, nbStr, length);
+			text[length] = '\0';
 			item = &menuSystem->items[menuSystem->numItems++];
 			nbStr = text;
 		}
@@ -420,7 +421,8 @@ void Menu_initMenu(Menu_t* menu, int i)
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Input", 0, (i == MENU_INGAME_OPTIONS) ? true : false);
 			// New Option
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Sound", 0, (i == MENU_INGAME_OPTIONS) ? true : false);
-            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Compact text:", sdlVideo.compactText ? "on" : "off", 0, 0);
+            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Text size:", TextFields_sizeLabel(), 0, 0);
+            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Wide fields:", sdlVideo.wideText ? "on" : "off", 0, 0);
 
 
 #if 0 // Original Code
@@ -1277,9 +1279,18 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 				}
 
                 else if (itemId == 4) {
-                    sdlVideo.compactText ^= true;
+                    sdlVideo.textSize = (sdlVideo.textSize + 1) % 4;
                     TextFields_refresh(doomCanvas);
-                    SDL_strlcpy(menuSystem->items[itemId].textField2, sdlVideo.compactText ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
+                    SDL_strlcpy(menuSystem->items[itemId].textField2, TextFields_sizeLabel(), sizeof(menuSystem->items[itemId].textField2));
+                    Game_saveConfig(menu->doomRpg->game, 0);
+                    menuSystem->paintMenu = true;
+                    return menuId;
+                }
+
+                else if (itemId == 5) {
+                    sdlVideo.wideText ^= true;
+                    TextFields_refresh(doomCanvas);
+                    SDL_strlcpy(menuSystem->items[itemId].textField2, sdlVideo.wideText ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
                     Game_saveConfig(menu->doomRpg->game, 0);
                     menuSystem->paintMenu = true;
                     return menuId;

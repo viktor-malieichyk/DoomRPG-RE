@@ -12,7 +12,7 @@
 #include <SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
+#include <stdlib.h>
 
 #include "DoomRPG.h"
 #include "Z_Zone.h"

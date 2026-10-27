@@ -1,5 +1,9 @@
 //Using SDL and standard IO
+#ifndef DOOMRPG_IOS
 #define SDL_MAIN_HANDLED
+#else
+#include "Platform.h"
+#endif
 #include <SDL.h>
 #include <SDL_mixer.h>
 #include <stdio.h>
@@ -20,16 +24,26 @@
 #endif
 
 extern DoomRPG_t* doomRpg;
+#ifdef DOOMRPG_IOS
+int SDL_main(int argc, char* args[])
+#else
 int main(int argc, char* args[])
+#endif
 {
 	SDL_Event ev;
 	int		UpTime = 0;
 	int		mouseTime = 0;
 	int		mouse_Button;
 
+#ifdef DOOMRPG_IOS
+    IOS_SetupStorage();
+#endif
 	SDL_SetMainReady();
 	Z_Init();
 	SDL_InitVideo();
+#ifdef DOOMRPG_IOS
+    IOS_Prepare();
+#endif
 	SDL_InitAudio();
 
 	openZipFile("DoomRPG.zip", &zipFile);
@@ -121,7 +135,7 @@ int main(int argc, char* args[])
 						SDL_Log("Window %d closed", ev.window.windowID);
 						closeZipFile(&zipFile);
 						DoomRPG_FreeAppData(doomRpg);
-						SDL_CloseAudio();
+						DoomRPG_CloseAudio();
 						SDL_Close();
 						exit(0);
 						break;
@@ -152,7 +166,15 @@ int main(int argc, char* args[])
 
         }
 
+#ifdef DOOMRPG_IOS
+        if (IOS_Paused()) { SDL_Delay(15); continue; }
+        Uint8 mobileState[SDL_NUM_SCANCODES];
+        SDL_memcpy(mobileState, state, sizeof(mobileState));
+        IOS_Keyboard(mobileState);
+        DoomRPG_pollInput(doomRpg, mouse_Button, mobileState);
+#else
         DoomRPG_pollInput(doomRpg, mouse_Button, state);
+#endif
 
 		if (currentTimeMillis > UpTime) {
 			UpTime = currentTimeMillis + 15;
@@ -162,7 +184,7 @@ int main(int argc, char* args[])
 
 	closeZipFile(&zipFile);
 	DoomRPG_FreeAppData(doomRpg);
-	SDL_CloseAudio();
+	DoomRPG_CloseAudio();
 	SDL_Close();
 
 	return 0;

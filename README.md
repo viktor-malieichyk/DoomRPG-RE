@@ -7,6 +7,9 @@ and menu input/alignment fixes. See [Windows changes and build notes](SCALING.md
 [Download the Windows release](https://github.com/viktor-malieichyk/DoomRPG-RE/releases/latest).
 The build includes a resolution picker, 640x480 defaults and the original icon.
 
+An iPhone/iPad build adds touch controls, game-data import from Files/iCloud Drive,
+and save backup/import through iCloud Drive. See [iOS build and setup](ios/README.md).
+
 Original project and credits follow. Game data is not included.
 
 ![image](https://github.com/Erick194/DoomRPG-RE/assets/41172072/258e99d9-b122-4cbe-8659-2fd0f4105068)<br />

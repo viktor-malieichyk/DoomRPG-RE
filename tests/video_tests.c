@@ -24,10 +24,12 @@ void test_video(SDL_Surface* surface)
     /* A persisted test config can differ from the active rendering fixture. */
     for (int i = 0; i < SDL_VIDEO_MODE_COUNT; ++i)
         if (sdlVideoModes[i].width == sdlVideo.rendererW && sdlVideoModes[i].height == sdlVideo.rendererH) initial = i;
-    boolean compactBefore = sdlVideo.compactText;
+    int sizeBefore = sdlVideo.textSize;
+    boolean wideBefore = sdlVideo.wideText;
+    sdlVideo.wideText = false;
     char message[] = "These messages use|small text in the|same dialogue box.|More words fit on|each line without|losing paragraph|breaks. This panel|should now show a|lot more of the|message at once.|Use the gamepad to|continue reading.";
     canvas->state = ST_DIALOG;
-    sdlVideo.compactText = false;
+    sdlVideo.textSize = 0;
     DoomCanvas_prepareDialog(canvas, message, false);
     int normalLines = canvas->numDialogLines;
     assert(TextFields_dialogRows() == 4);
@@ -36,7 +38,7 @@ void test_video(SDL_Surface* surface)
     char path[128];
     snprintf(path, sizeof(path), "source/tests/text-normal-%dx%d.bmp", sdlVideo.rendererW, sdlVideo.rendererH);
     assert(SDL_SaveBMP(surface, path) == 0);
-    sdlVideo.compactText = true;
+    sdlVideo.textSize = 3;
     TextFields_refresh(canvas);
     if (sdlVideo.rendererH > sdlVideo.uiH) {
         assert(canvas->numDialogLines < normalLines);
@@ -47,17 +49,51 @@ void test_video(SDL_Surface* surface)
     snprintf(path, sizeof(path), "source/tests/text-compact-%dx%d.bmp", sdlVideo.rendererW, sdlVideo.rendererH);
     assert(SDL_SaveBMP(surface, path) == 0);
     Game_saveConfig(doomRpg->game, 0);
-    sdlVideo.compactText = false;
+    sdlVideo.textSize = 0;
     Game_loadConfig(doomRpg->game);
-    assert(sdlVideo.compactText);
-    sdlVideo.compactText = false;
+    assert(sdlVideo.textSize == 3);
+    sdlVideo.textSize = 0;
     Game_loadConfig(NULL);
-    assert(sdlVideo.compactText);
+    assert(sdlVideo.textSize == 3);
     /* Every source character must remain represented in ordered line spans. */
     for (int row = 0; row < canvas->numDialogLines; ++row) {
         assert(canvas->dialogIndexes[2 * row] >= 0);
         assert(canvas->dialogIndexes[2 * row + 1] <= (int)(126 / (7 * TextFields_scale())));
     }
+    /* Four sizes and both widths reflow without losing the source text. */
+    float previousScale = 2.0f;
+    for (int size = 0; size < 4; ++size) {
+        sdlVideo.textSize = size;
+        assert(TextFields_scale() <= previousScale);
+        previousScale = TextFields_scale();
+        sdlVideo.wideText = false;
+        DoomCanvas_prepareDialog(canvas, message, false);
+        int narrowLines = canvas->numDialogLines;
+        assert(TextFields_dialogWidth(canvas) == SDL_min(128, canvas->displayRect.w));
+        sdlVideo.wideText = true;
+        TextFields_refresh(canvas);
+        assert(TextFields_dialogLeft(canvas) == 0);
+        assert(TextFields_dialogWidth(canvas) == canvas->displayRect.w);
+        assert(canvas->numDialogLines <= narrowLines);
+        canvas->dialogTypeLineIdx = TextFields_dialogRows();
+        DoomCanvas_dialogState(canvas);
+        snprintf(path, sizeof(path), "source/tests/text-wide-size%d-%dx%d.bmp", size, sdlVideo.rendererW, sdlVideo.rendererH);
+        assert(SDL_SaveBMP(surface, path) == 0);
+        Game_saveConfig(doomRpg->game, 0);
+        sdlVideo.textSize = -1; sdlVideo.wideText = false;
+        Game_loadConfig(doomRpg->game);
+        assert(sdlVideo.textSize == size && sdlVideo.wideText);
+    }
+    /* An old config with only its on/off extension still loads. */
+    size_t configLength = 0;
+    void* legacy = SDL_LoadFile("Config", &configLength);
+    assert(legacy && configLength > 2);
+    SDL_RWops* legacyFile = SDL_RWFromFile("Config", "wb");
+    assert(legacyFile && SDL_RWwrite(legacyFile, legacy, 1, configLength - 2) == configLength - 2);
+    SDL_RWclose(legacyFile); SDL_free(legacy);
+    Game_loadConfig(NULL);
+    assert(sdlVideo.textSize == 3 && !sdlVideo.wideText);
+    Game_saveConfig(doomRpg->game, 0);
     DoomCanvas_closeDialog(canvas);
     int map = render->loadMapID, x = canvas->viewX, y = canvas->viewY;
     int health = doomRpg->player->ce.param1;
@@ -111,6 +147,14 @@ void test_video(SDL_Surface* surface)
     assert(menu->selectedIndex >= menu->scrollIndex);
     assert(menu->selectedIndex < menu->scrollIndex + menu->maxItems);
     assert(VideoOptions_resolution(doomRpg, initial));
+    /* At 1080p all four advertised scales are distinct. */
+    assert(VideoOptions_resolution(doomRpg, 17));
+    float sizes[] = {1.0f, 0.75f, 0.60f, 0.50f};
+    for (int size = 0; size < 4; ++size) {
+        sdlVideo.textSize = size;
+        assert(SDL_fabsf(TextFields_scale() - sizes[size]) < 0.001f);
+    }
+    assert(VideoOptions_resolution(doomRpg, initial));
     /* Missing and invalid configs use 640x480, while valid saved modes survive. */
     assert(sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].width == 640 && sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].height == 480);
     Game_saveConfig(doomRpg->game, 0);
@@ -128,14 +172,21 @@ void test_video(SDL_Surface* surface)
     Game_loadConfig(NULL);
     assert(sdlVideo.resolutionIndex == initial);
     MenuSystem_setMenu(doomRpg->menuSystem, MENU_INGAME_OPTIONS);
-    assert(strcmp(doomRpg->menuSystem->items[4].textField, "Compact text:") == 0);
-    boolean before = sdlVideo.compactText;
+    assert(strcmp(doomRpg->menuSystem->items[4].textField, "Text size:") == 0);
+    int before = sdlVideo.textSize;
     Menu_select(doomRpg->menu, MENU_INGAME_OPTIONS, 4);
-    assert(sdlVideo.compactText != before);
+    assert(sdlVideo.textSize == (before + 1) % 4);
+    for (int i = 0; i < 3; ++i) Menu_select(doomRpg->menu, MENU_INGAME_OPTIONS, 4);
+    assert(sdlVideo.textSize == before);
+    assert(strcmp(doomRpg->menuSystem->items[5].textField, "Wide fields:") == 0);
+    boolean oldWidth = sdlVideo.wideText;
+    Menu_select(doomRpg->menu, MENU_INGAME_OPTIONS, 5);
+    assert(sdlVideo.wideText != oldWidth);
     MenuSystem_paint(doomRpg->menuSystem);
     snprintf(path, sizeof(path), "source/tests/options-%dx%d.bmp", sdlVideo.rendererW, sdlVideo.rendererH);
     assert(SDL_SaveBMP(surface, path) == 0);
-    sdlVideo.compactText = compactBefore;
+    sdlVideo.textSize = sizeBefore;
+    sdlVideo.wideText = wideBefore;
     Game_saveConfig(doomRpg->game, 0);
-    puts("PASS video: live framebuffer/layout changes through 4K, state preserved, compact text reflow and persistence, resolution picker/cancel, 640x480 defaults");
+    puts("PASS video: live framebuffer/layout changes through 4K, state preserved, four text sizes, full-width reflow and legacy config persistence, resolution picker/cancel, 640x480 defaults");
 }

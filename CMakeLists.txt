@@ -13,6 +13,12 @@ if(MSVC)
 	add_definitions("/D_CRT_SECURE_NO_WARNINGS")
 endif()
 
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+  enable_language(OBJC)
+  include(ios/Build.cmake)
+  return()
+endif()
+
 find_package(SDL2 REQUIRED)
 find_package(SDL2_mixer REQUIRED)
 find_package(ZLIB REQUIRED)
