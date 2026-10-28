@@ -14,6 +14,7 @@ static UIViewController* host;
 static NSString* folder;
 static UIView* pinPad;
 static BOOL pinPadVisible;
+static BOOL pinPadVisibilityRequested;
 @interface Mobile : NSObject <UIDocumentPickerDelegate>
 -(void)menu;
 @end
@@ -175,4 +176,17 @@ void IOS_SetActive(int active) {
  if (active) { Mix_Resume(-1); Mix_ResumeMusic(); }
 }
 
-void IOS_ShowPinKeypad(int visible) { BOOL show=visible!=0; if(pinPad && pinPadVisible!=show) { pinPadVisible=show; pinPad.hidden=!show; if(show) [pinPad.superview bringSubviewToFront:pinPad]; } }
+void IOS_ShowPinKeypad(int visible) {
+ BOOL show = visible != 0;
+ if (!pinPad || pinPadVisibilityRequested == show) return;
+
+ /* The SDL iOS animation callback is also responsible for rendering. Defer
+    UIKit visibility/layout work until it has returned, or UIKit can re-enter
+    the SDL view while its GL frame is being presented. */
+ pinPadVisibilityRequested = show;
+ dispatch_async(dispatch_get_main_queue(), ^{
+  if (!pinPad || pinPadVisible == pinPadVisibilityRequested) return;
+  pinPadVisible = pinPadVisibilityRequested;
+  pinPad.hidden = !pinPadVisible;
+ });
+}
