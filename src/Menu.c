@@ -422,7 +422,7 @@ void Menu_initMenu(Menu_t* menu, int i)
 			// New Option
 			MenuItem_Set(&menuSystem->items[menuSystem->numItems++], "Sound", 0, (i == MENU_INGAME_OPTIONS) ? true : false);
             MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Text size:", TextFields_sizeLabel(), 0, 0);
-            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Wide fields:", sdlVideo.wideText ? "on" : "off", 0, 0);
+            MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "Field width:", (char*)TextFields_widthLabel(), 0, 0);
             MenuItem_Set2(&menuSystem->items[menuSystem->numItems++], "HUD panels:", sdlVideo.hideHud ? "off" : "on", 0, 0);
 
 
@@ -1297,9 +1297,10 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
                 }
 
                 else if (itemId == 5) {
-                    sdlVideo.wideText ^= true;
+                    sdlVideo.textFieldWidth = (sdlVideo.textFieldWidth + 1) % 7;
+                    sdlVideo.wideText = sdlVideo.textFieldWidth > 0;
                     TextFields_refresh(doomCanvas);
-                    SDL_strlcpy(menuSystem->items[itemId].textField2, sdlVideo.wideText ? "on" : "off", sizeof(menuSystem->items[itemId].textField2));
+                    SDL_strlcpy(menuSystem->items[itemId].textField2, TextFields_widthLabel(), sizeof(menuSystem->items[itemId].textField2));
                     Game_saveConfig(menu->doomRpg->game, 0);
                     menuSystem->paintMenu = true;
                     return menuId;

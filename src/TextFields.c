@@ -22,7 +22,16 @@ const char* TextFields_sizeLabel(void)
 
 int TextFields_dialogWidth(DoomCanvas_t* canvas)
 {
-    return sdlVideo.wideText ? canvas->displayRect.w : SDL_min(128, canvas->displayRect.w);
+    static const int percentages[] = {0, 50, 60, 70, 80, 90, 100};
+    int index = SDL_clamp(sdlVideo.textFieldWidth, 0, (int)SDL_arraysize(percentages) - 1);
+    if (index == 0) return SDL_min(128, canvas->displayRect.w);
+    return SDL_max(1, canvas->displayRect.w * percentages[index] / 100);
+}
+
+const char* TextFields_widthLabel(void)
+{
+    static const char* labels[] = {"Original", "50%", "60%", "70%", "80%", "90%", "Full"};
+    return labels[SDL_clamp(sdlVideo.textFieldWidth, 0, (int)SDL_arraysize(labels) - 1)];
 }
 
 int TextFields_dialogLeft(DoomCanvas_t* canvas)
@@ -72,7 +81,7 @@ void TextFields_prepareDialog(DoomCanvas_t* canvas, const char* text)
     char source[sizeof(canvas->dialogSource)];
     SDL_strlcpy(source, text, sizeof(source));
     SDL_strlcpy(canvas->dialogSource, source, sizeof(canvas->dialogSource));
-    boolean compact = (TextFields_scale() < 1 || sdlVideo.wideText) && canvas->state != ST_DIALOGPASSWORD;
+    boolean compact = (TextFields_scale() < 1 || sdlVideo.textFieldWidth > 0) && canvas->state != ST_DIALOGPASSWORD;
     int used = 0;
     for (int i = 0; source[i] && used < (int)sizeof(canvas->dialogBuffer) - 1; ++i) {
         char c = source[i];

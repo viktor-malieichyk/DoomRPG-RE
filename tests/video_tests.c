@@ -27,6 +27,7 @@ void test_video(SDL_Surface* surface)
         if (sdlVideoModes[i].width == sdlVideo.rendererW && sdlVideoModes[i].height == sdlVideo.rendererH) initial = i;
     int sizeBefore = sdlVideo.textSize;
     boolean wideBefore = sdlVideo.wideText;
+    int fieldWidthBefore = sdlVideo.textFieldWidth;
     sdlVideo.wideText = false;
     char message[] = "These messages use|small text in the|same dialogue box.|More words fit on|each line without|losing paragraph|breaks. This panel|should now show a|lot more of the|message at once.|Use the gamepad to|continue reading.";
     canvas->state = ST_DIALOG;
@@ -68,10 +69,12 @@ void test_video(SDL_Surface* surface)
         assert(TextFields_scale() <= previousScale);
         previousScale = TextFields_scale();
         sdlVideo.wideText = false;
+        sdlVideo.textFieldWidth = 0;
         DoomCanvas_prepareDialog(canvas, message, false);
         int narrowLines = canvas->numDialogLines;
         assert(TextFields_dialogWidth(canvas) == SDL_min(128, canvas->displayRect.w));
         sdlVideo.wideText = true;
+        sdlVideo.textFieldWidth = 6;
         TextFields_refresh(canvas);
         assert(TextFields_dialogLeft(canvas) == 0);
         assert(TextFields_dialogWidth(canvas) == canvas->displayRect.w);
@@ -83,7 +86,7 @@ void test_video(SDL_Surface* surface)
         Game_saveConfig(doomRpg->game, 0);
         sdlVideo.textSize = -1; sdlVideo.wideText = false;
         Game_loadConfig(doomRpg->game);
-        assert(sdlVideo.textSize == size && sdlVideo.wideText);
+        assert(sdlVideo.textSize == size && sdlVideo.textFieldWidth == 6);
     }
     /* An old config with only its on/off extension still loads. */
     size_t configLength = 0;
@@ -93,7 +96,7 @@ void test_video(SDL_Surface* surface)
     assert(legacyFile && SDL_RWwrite(legacyFile, legacy, 1, configLength - 2) == configLength - 2);
     SDL_RWclose(legacyFile); SDL_free(legacy);
     Game_loadConfig(NULL);
-    assert(sdlVideo.textSize == 3 && !sdlVideo.wideText);
+    assert(sdlVideo.textSize == 3 && sdlVideo.textFieldWidth == 6);
     Game_saveConfig(doomRpg->game, 0);
     DoomCanvas_closeDialog(canvas);
     int map = render->loadMapID, x = canvas->viewX, y = canvas->viewY;
@@ -193,7 +196,7 @@ void test_video(SDL_Surface* surface)
     assert(sdlVideo.textSize == (before + 1) % 4);
     for (int i = 0; i < 3; ++i) Menu_select(doomRpg->menu, MENU_INGAME_OPTIONS, 4);
     assert(sdlVideo.textSize == before);
-    assert(strcmp(doomRpg->menuSystem->items[5].textField, "Wide fields:") == 0);
+    assert(strcmp(doomRpg->menuSystem->items[5].textField, "Field width:") == 0);
     boolean oldWidth = sdlVideo.wideText;
     Menu_select(doomRpg->menu, MENU_INGAME_OPTIONS, 5);
     assert(sdlVideo.wideText != oldWidth);
@@ -202,6 +205,7 @@ void test_video(SDL_Surface* surface)
     assert(SDL_SaveBMP(surface, path) == 0);
     sdlVideo.textSize = sizeBefore;
     sdlVideo.wideText = wideBefore;
+    sdlVideo.textFieldWidth = fieldWidthBefore;
     Game_saveConfig(doomRpg->game, 0);
     puts("PASS video: live framebuffer/layout changes through 4K, state preserved, four text sizes, full-width reflow and legacy config persistence, resolution picker/cancel, 640x480 defaults");
 }
