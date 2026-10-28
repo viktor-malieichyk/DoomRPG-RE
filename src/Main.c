@@ -119,6 +119,11 @@ static void GameFrame(void* unused)
                     IOS_RefreshLayout();
                     break;
 #endif
+#ifdef DOOMRPG_IOS
+                case IOS_PIN_EVENT:
+                    if (doomRpg->doomCanvas->state == ST_DIALOGPASSWORD) { int v=(int)ev.user.code; if(v<=9) DoomCanvas_handlePasswordEvents(doomRpg->doomCanvas, AVK_0+v); else if(v==10) DoomCanvas_handlePasswordEvents(doomRpg->doomCanvas, 15); else DoomCanvas_handlePasswordEvents(doomRpg->doomCanvas, AVK_SELECT); doomRpg->doomCanvas->isUpdateView=true; }
+                    break;
+#endif
                 case SDL_KEYDOWN:
 #ifndef DOOMRPG_IOS
                     if (ev.key.keysym.scancode == SDL_SCANCODE_F2 && !ev.key.repeat && !doomRpg->menuSystem->setBind) {
@@ -173,6 +178,9 @@ static void GameFrame(void* unused)
 	if (currentTimeMillis > UpTime) {
 		UpTime = currentTimeMillis + 15;
 		DoomRPG_loopGame(doomRpg);
+#ifdef DOOMRPG_IOS
+        IOS_ShowPinKeypad(doomRpg->doomCanvas->state == ST_DIALOGPASSWORD);
+#endif
 	}
 }
 

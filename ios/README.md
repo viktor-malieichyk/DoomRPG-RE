@@ -101,3 +101,4 @@ Switching away suspends game audio; returning restores the scene layout and audi
 
 Options > HUD panels hides or shows both status panels and the softkey strip.
 Desktop builds also support F2 to toggle them; iOS has no extra touch button.
+\nPassword terminals show an on-screen numeric keypad while requesting a PIN.\n

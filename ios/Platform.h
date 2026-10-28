@@ -8,3 +8,5 @@ void IOS_ResetTouch(void);
 void IOS_RefreshLayout(void);
 
 void IOS_SetActive(int active);
+void IOS_ShowPinKeypad(int visible);
+#define IOS_PIN_EVENT (SDL_USEREVENT + 11)

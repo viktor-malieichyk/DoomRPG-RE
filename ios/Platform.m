@@ -12,6 +12,7 @@ static BOOL ready, paused, importingSaves, exporting;
 static Uint8 touchKeys[SDL_NUM_SCANCODES];
 static UIViewController* host;
 static NSString* folder;
+static UIView* pinPad;
 @interface Mobile : NSObject <UIDocumentPickerDelegate>
 -(void)menu;
 @end
@@ -133,6 +134,7 @@ void IOS_Prepare(void) {
  button(host.view,@"Strafe L",SDL_SCANCODE_A,8,152,NO,YES);
  button(host.view,@"Strafe R",SDL_SCANCODE_D,128,152,NO,YES);
  SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS,"0");
+ pinPad=[UIView new]; pinPad.translatesAutoresizingMaskIntoConstraints=NO; pinPad.backgroundColor=[UIColor.blackColor colorWithAlphaComponent:.85]; pinPad.layer.cornerRadius=14; pinPad.hidden=YES; [host.view addSubview:pinPad]; UILayoutGuide* g=host.view.safeAreaLayoutGuide; [NSLayoutConstraint activateConstraints:@[[pinPad.centerXAnchor constraintEqualToAnchor:g.centerXAnchor],[pinPad.centerYAnchor constraintEqualToAnchor:g.centerYAnchor],[pinPad.widthAnchor constraintEqualToConstant:228],[pinPad.heightAnchor constraintEqualToConstant:216]]]; NSArray* labels=@[@"1",@"2",@"3",@"4",@"5",@"6",@"7",@"8",@"9",@"⌫",@"0",@"↵"]; for(int i=0;i<12;i++){ UIButton* b=[UIButton buttonWithType:UIButtonTypeSystem]; b.translatesAutoresizingMaskIntoConstraints=NO; b.tag=(i==9?10:(i==11?11:(i==10?0:i+1))); [b setTitle:labels[i] forState:UIControlStateNormal]; b.titleLabel.font=[UIFont boldSystemFontOfSize:24]; b.tintColor=UIColor.whiteColor; b.backgroundColor=[UIColor.whiteColor colorWithAlphaComponent:.16]; b.layer.cornerRadius=8; [pinPad addSubview:b]; int c=i%3,r=i/3; [NSLayoutConstraint activateConstraints:@[[b.widthAnchor constraintEqualToConstant:68],[b.heightAnchor constraintEqualToConstant:46],[b.leadingAnchor constraintEqualToAnchor:pinPad.leadingAnchor constant:6+c*74],[b.topAnchor constraintEqualToAnchor:pinPad.topAnchor constant:6+r*52]]]; [b addTarget:mobile action:@selector(pin:) forControlEvents:UIControlEventTouchUpInside]; }
  [mobile menu];
  while(!ready) { SDL_PumpEvents(); SDL_Delay(16); }
  paused=NO;
@@ -171,3 +173,5 @@ void IOS_SetActive(int active) {
  }
  if (active) { Mix_Resume(-1); Mix_ResumeMusic(); }
 }
+
+void IOS_ShowPinKeypad(int visible) { if(pinPad) pinPad.hidden=!visible; }
