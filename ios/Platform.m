@@ -13,6 +13,7 @@ static Uint8 touchKeys[SDL_NUM_SCANCODES];
 static UIViewController* host;
 static NSString* folder;
 static UIView* pinPad;
+static BOOL pinPadVisible;
 @interface Mobile : NSObject <UIDocumentPickerDelegate>
 -(void)menu;
 @end
@@ -174,4 +175,4 @@ void IOS_SetActive(int active) {
  if (active) { Mix_Resume(-1); Mix_ResumeMusic(); }
 }
 
-void IOS_ShowPinKeypad(int visible) { if(pinPad) pinPad.hidden=!visible; }
+void IOS_ShowPinKeypad(int visible) { BOOL show=visible!=0; if(pinPad && pinPadVisible!=show) { pinPadVisible=show; pinPad.hidden=!show; if(show) [pinPad.superview bringSubviewToFront:pinPad]; } }
