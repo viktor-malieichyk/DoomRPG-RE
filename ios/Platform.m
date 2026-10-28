@@ -17,6 +17,7 @@ static BOOL pinPadVisible;
 static BOOL pinPadVisibilityRequested;
 @interface Mobile : NSObject <UIDocumentPickerDelegate>
 -(void)menu;
+-(void)pin:(UIButton*)button;
 @end
 static Mobile* mobile;
 static void notice(NSString* message) {
@@ -34,6 +35,12 @@ static BOOL assetsReady(void) {
 @implementation Mobile
 -(void)down:(UIButton*)button { touchKeys[button.tag]=1; }
 -(void)up:(UIButton*)button { touchKeys[button.tag]=0; }
+-(void)pin:(UIButton*)button {
+ SDL_Event event = {0};
+ event.type = IOS_PIN_EVENT;
+ event.user.code = (Sint32)button.tag;
+ SDL_PushEvent(&event);
+}
 -(void)start {
  if(!assetsReady()) { notice(@"Import DoomRPG.zip and gm.sf2 first. Choose them from iCloud Drive or On My iPhone in Files."); return; }
  ready=YES; [host dismissViewControllerAnimated:YES completion:nil];
