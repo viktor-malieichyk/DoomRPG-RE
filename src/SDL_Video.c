@@ -69,6 +69,11 @@ void SDL_InitVideo(void)
 
 	Game_loadConfig(NULL);
 
+#ifdef DOOMRPG_IOS
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
+    /* Ambient mixes with other apps without DuckOthers, even while silent. */
+    SDL_SetHint(SDL_HINT_AUDIO_CATEGORY, "ambient");
+#endif
 	SDL_SetHint(SDL_HINT_NO_SIGNAL_HANDLERS, "1");
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0) {
         DoomRPG_Error("Could not initialize SDL: %s", SDL_GetError());

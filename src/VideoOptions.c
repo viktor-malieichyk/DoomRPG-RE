@@ -101,3 +101,13 @@ boolean VideoOptions_mobileLayout(DoomRPG_t* game)
     return resizeFramebuffer(game, 11, width, height);
 }
 #endif
+
+boolean VideoOptions_toggleHud(DoomRPG_t* game)
+{
+    sdlVideo.hideHud = !sdlVideo.hideHud;
+    if (!resizeFramebuffer(game, sdlVideo.resolutionIndex, sdlVideo.rendererW, sdlVideo.rendererH)) {
+        sdlVideo.hideHud = !sdlVideo.hideHud;
+        return false;
+    }
+    return true;
+}

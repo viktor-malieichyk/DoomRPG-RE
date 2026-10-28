@@ -701,6 +701,7 @@ void Game_loadConfig(Game_t* game)
 	printf("loadConfig\n");
 	sdlVideo.textSize = 0;
     sdlVideo.wideText = false;
+    sdlVideo.hideHud = false;
 	sdlVideo.resolutionIndex = SDL_DEFAULT_VIDEO_MODE;
 
 	rw = SDL_RWFromFile("Config", "r");
@@ -797,6 +798,7 @@ void Game_loadConfig(Game_t* game)
                 sdlVideo.textSize = SDL_clamp(intData, 0, 3);
             }
             if (SDL_RWtell(rw) < SDL_RWsize(rw)) sdlVideo.wideText = File_readByte(rw) != 0;
+            if (SDL_RWtell(rw) < SDL_RWsize(rw)) sdlVideo.hideHud = File_readByte(rw) != 0;
 
 
 		}
@@ -1967,6 +1969,7 @@ void Game_saveConfig(Game_t* game, int num)
 	File_writeByte(rw, sdlVideo.textSize != 0); /* Older builds read this bool. */
     File_writeByte(rw, sdlVideo.textSize);
     File_writeByte(rw, sdlVideo.wideText);
+    File_writeByte(rw, sdlVideo.hideHud);
 	SDL_RWclose(rw);
 }
 

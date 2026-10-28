@@ -111,6 +111,7 @@ void Hud_drawBarTiles(Hud_t* hud, int x, int y, int width, boolean isLargerStatu
 
 void Hud_drawBottomBar(Hud_t* hud)
 {
+    if (sdlVideo.hideHud) return;
     Image_t* img;
     DoomCanvas_t* doomCanvas;
     CombatEntity_t* ce;
@@ -314,6 +315,7 @@ void Hud_drawEffects(Hud_t* hud)
 
 void Hud_drawTopBar(Hud_t* hud)
 {
+    if (sdlVideo.hideHud) return;
     DoomCanvas_t* doomCanvas;
     char* text;
     int len;
@@ -437,7 +439,7 @@ void Hud_startup(Hud_t* hud, boolean largeStatus)
 	doomRpg = hud->doomRpg;
 
 	hud->msgMaxChars = (int)((doomRpg->doomCanvas->displayRect.w - 4) / (7 * TextFields_scale()));
-	hud->statusTopBarHeight = 20;
+	hud->statusTopBarHeight = sdlVideo.hideHud ? 0 : 20;
     DoomRPG_createImage(doomRpg, "bar_lg.bmp", false, &hud->imgStatusBarLarge);
     DoomRPG_createImage(doomRpg, "k.bmp", false, &hud->imgStatusBar);
     DoomRPG_createImage(doomRpg, "n.bmp", true, &hud->imgAttArrow);
@@ -471,7 +473,7 @@ void Hud_startup(Hud_t* hud, boolean largeStatus)
         hud->statusHealthXpos = 2;
         height = hud->imgStatusBarLarge.height;
     }
-    hud->statusBarHeight = height;
+    hud->statusBarHeight = sdlVideo.hideHud ? 0 : height;
 
     hud->hudFaceWidth = hud->imgHudFaces.width;
     hud->hudFaceHeight = (hud->imgHudFaces.height / 9);

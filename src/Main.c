@@ -18,6 +18,7 @@
 #include "SDL_Video.h"
 #include "Z_Zip.h"
 #include "Controls.h"
+#include "Game.h"
 #include "VideoOptions.h"
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -112,7 +113,18 @@ static void GameFrame(void* unused)
 				break;
 			}
 
+#ifdef DOOMRPG_IOS
+                case SDL_APP_DIDENTERFOREGROUND:
+                    refreshDrawable = true;
+                    IOS_RefreshLayout();
+                    break;
+#endif
                 case SDL_KEYDOWN:
+#ifndef DOOMRPG_IOS
+                    if (ev.key.keysym.scancode == SDL_SCANCODE_F2 && !ev.key.repeat && !doomRpg->menuSystem->setBind) {
+                        if (VideoOptions_toggleHud(doomRpg)) Game_saveConfig(doomRpg->game, 0);
+                    }
+#endif
                     if (ev.key.keysym.scancode == SDL_SCANCODE_F1 && !ev.key.repeat && !doomRpg->menuSystem->setBind)
                         Controls_open(doomRpg);
                     break;

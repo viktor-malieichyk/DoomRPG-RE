@@ -95,3 +95,9 @@ Save tests cover round-trip export/import, malformed and incomplete archives,
 replacement, previous-save preservation, and unchanged game assets.
 A device build can compile unsigned on a Mac without signing identities. Actual
 iCloud transfer and device installation require testing on your signed-in device.
+
+Audio uses the ambient mixing session and does not mute or lower other apps.
+Switching away suspends game audio; returning restores the scene layout and audio context.
+
+Options > HUD panels hides or shows both status panels and the softkey strip.
+Desktop builds also support F2 to toggle them; iOS has no extra touch button.

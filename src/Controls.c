@@ -127,7 +127,7 @@ void Controls_capture(MenuSystem_t* menu, int mouse, const Uint8* state)
     }
     int binding = -1;
     for (int i = 1; i < SDL_NUM_SCANCODES; ++i)
-        if (state[i] && i != SDL_SCANCODE_F1) { binding = i; break; }
+        if (state[i] && i != SDL_SCANCODE_F1 && i != SDL_SCANCODE_F2) { binding = i; break; }
     if (binding < 0 && mouse != MOUSE_BUTTON_INVALID) binding = mouse | IS_MOUSE_BUTTON;
     if (binding < 0 && pad != CONTROLLER_BUTTON_INVALID) binding = pad | IS_CONTROLLER_BUTTON;
     if (binding >= 0 && Controls_assign(menu->items[menu->bindIndx].action, binding)) {
@@ -194,7 +194,11 @@ void Controls_paint(MenuSystem_t* menu)
     DoomRPG_fillRect(menu->doomRpg, 0, 0, width, height);
     DoomRPG_setFontColor(menu->doomRpg, 0xffffffff);
     DoomCanvas_drawString1(canvas, "Controls / Help", width / 2, 3, 16);
+    #ifdef DOOMRPG_IOS
     DoomCanvas_drawString1(canvas, "D-pad/Arrows move", width / 2, 17, 16);
+#else
+    DoomCanvas_drawString1(canvas, "F2: toggle HUD", width / 2, 17, 16);
+#endif
     for (int index = menu->scrollIndex; index < menu->numItems && index < menu->scrollIndex + menu->maxItems; ++index) {
         int y = 34 + (index - menu->scrollIndex) * 28;
         boolean selected = index == menu->selectedIndex;

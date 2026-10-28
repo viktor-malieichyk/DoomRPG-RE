@@ -6,6 +6,7 @@
 #include "DoomCanvas.h"
 #include "Render.h"
 #include "Player.h"
+#include "Hud.h"
 #include "Game.h"
 #include "Menu.h"
 #include "MenuSystem.h"
@@ -155,6 +156,20 @@ void test_video(SDL_Surface* surface)
         assert(SDL_fabsf(TextFields_scale() - sizes[size]) < 0.001f);
     }
     assert(VideoOptions_resolution(doomRpg, initial));
+    /* Hiding panels expands the view and persists without changing video mode. */
+    boolean oldHidden = sdlVideo.hideHud;
+    if (oldHidden) assert(VideoOptions_toggleHud(doomRpg));
+    int panelHeight = canvas->screenRect.h;
+    assert(VideoOptions_toggleHud(doomRpg));
+    assert(sdlVideo.hideHud && doomRpg->hud->statusBarHeight == 0 && doomRpg->hud->statusTopBarHeight == 0);
+    assert(canvas->screenRect.h > panelHeight);
+    Game_saveConfig(doomRpg->game, 0);
+    sdlVideo.hideHud = false;
+    Game_loadConfig(NULL);
+    assert(sdlVideo.hideHud);
+    assert(VideoOptions_toggleHud(doomRpg));
+    assert(canvas->screenRect.h == panelHeight);
+    if (oldHidden) assert(VideoOptions_toggleHud(doomRpg));
     /* Missing and invalid configs use 640x480, while valid saved modes survive. */
     assert(sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].width == 640 && sdlVideoModes[SDL_DEFAULT_VIDEO_MODE].height == 480);
     Game_saveConfig(doomRpg->game, 0);

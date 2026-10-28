@@ -2,8 +2,12 @@
 set(SDL_UIKIT_WINDOW "${PROJECT_SOURCE_DIR}/build/ios-deps/SDL/src/video/uikit/SDL_uikitwindow.m")
 file(READ "${SDL_UIKIT_WINDOW}" SDL_WINDOW_SOURCE)
 string(REPLACE "uiwindow = [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];"
- "UIWindowScene *gameScene = nil;\n        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {\n            if ([scene isKindOfClass:UIWindowScene.class]) { gameScene = (UIWindowScene *)scene; break; }\n        }\n        uiwindow = gameScene ? [[SDL_uikitwindow alloc] initWithWindowScene:gameScene] : [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];\n        uiwindow.frame = data.uiscreen.bounds;"
+ "UIWindowScene *gameScene = nil;\n        for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {\n            if ([scene isKindOfClass:UIWindowScene.class]) { gameScene = (UIWindowScene *)scene; break; }\n        }\n        uiwindow = gameScene ? [[SDL_uikitwindow alloc] initWithWindowScene:gameScene] : [[SDL_uikitwindow alloc] initWithFrame:data.uiscreen.bounds];\n        uiwindow.frame = gameScene ? gameScene.coordinateSpace.bounds : data.uiscreen.bounds;"
  SDL_WINDOW_PATCHED "${SDL_WINDOW_SOURCE}")
+# Migrate dependency trees already patched by earlier iOS builds.
+string(REPLACE "uiwindow.frame = data.uiscreen.bounds;"
+ "uiwindow.frame = gameScene ? gameScene.coordinateSpace.bounds : data.uiscreen.bounds;"
+ SDL_WINDOW_PATCHED "${SDL_WINDOW_PATCHED}")
 if(NOT SDL_WINDOW_PATCHED STREQUAL SDL_WINDOW_SOURCE)
  file(WRITE "${SDL_UIKIT_WINDOW}" "${SDL_WINDOW_PATCHED}")
 endif()
@@ -25,7 +29,7 @@ add_executable(DoomRPG MACOSX_BUNDLE ${GAME_SOURCES} ios/Entry.m ios/Platform.m 
 target_compile_definitions(DoomRPG PRIVATE DOOMRPG_IOS=1)
 target_include_directories(DoomRPG BEFORE PRIVATE src ios ios/compat build/ios-deps/TinySoundFont build/ios-deps/SDL/src/video/uikit)
 target_compile_options(DoomRPG PRIVATE "$<$<COMPILE_LANGUAGE:OBJC>:-fobjc-arc>")
-target_link_libraries(DoomRPG PRIVATE SDL2::SDL2-static SDL2_mixer::SDL2_mixer-static z "-framework UIKit" "-framework UniformTypeIdentifiers")
+target_link_libraries(DoomRPG PRIVATE SDL2::SDL2-static SDL2_mixer::SDL2_mixer-static z "-framework UIKit" "-framework AVFAudio" "-framework UniformTypeIdentifiers")
 set(DOOMRPG_BUNDLE_ID "org.doomrpg.port" CACHE STRING "Unique app bundle ID for Personal Team signing")
 set_target_properties(DoomRPG PROPERTIES MACOSX_BUNDLE_GUI_IDENTIFIER "${DOOMRPG_BUNDLE_ID}" MACOSX_BUNDLE_INFO_PLIST "${PROJECT_SOURCE_DIR}/ios/Info.plist" XCODE_ATTRIBUTE_TARGETED_DEVICE_FAMILY "1,2" XCODE_ATTRIBUTE_CODE_SIGN_STYLE Automatic XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${DOOMRPG_BUNDLE_ID}")
 

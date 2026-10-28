@@ -1,7 +1,9 @@
 #import <UIKit/UIKit.h>
+#import <AVFAudio/AVAudioSession.h>
 #import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 #include <unistd.h>
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <SDL_syswm.h>
 #include "Platform.h"
 #import "SaveArchive.h"
@@ -107,6 +109,9 @@ static void button(UIView* view,NSString* title,int key,CGFloat x,CGFloat y,BOOL
  else [b addTarget:mobile action:@selector(menu) forControlEvents:UIControlEventTouchUpInside];
 }
 void IOS_SetupStorage(void) {
+ SDL_SetHint(SDL_HINT_AUDIO_CATEGORY,"ambient");
+ SDL_SetHint(SDL_HINT_ORIENTATIONS,"LandscapeLeft LandscapeRight");
+ IOS_SetActive(1);
  NSString* docs=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES).firstObject;
  folder=[docs stringByAppendingPathComponent:@"Game"];
  [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
@@ -134,3 +139,35 @@ void IOS_Prepare(void) {
 }
 void IOS_Keyboard(unsigned char* keys) { for(int i=0;i<SDL_NUM_SCANCODES;i++)keys[i]|=touchKeys[i]; }
 int IOS_Paused(void) { return paused || host.presentedViewController!=nil || UIApplication.sharedApplication.applicationState!=UIApplicationStateActive; }
+
+void IOS_ResetTouch(void) { memset(touchKeys, 0, sizeof(touchKeys)); }
+void IOS_RefreshLayout(void) {
+ if (!host) return;
+ UIWindow* window = host.view.window;
+ UIWindowScene* scene = window.windowScene;
+ if (!scene) return;
+ /* UIScreen bounds can be portrait while a landscape scene is resuming. */
+ window.frame = scene.coordinateSpace.bounds;
+ host.view.frame = window.bounds;
+ [host.view setNeedsLayout];
+ [host.view layoutIfNeeded];
+ SDL_Event event = {0};
+ event.type = SDL_WINDOWEVENT;
+ event.window.windowID = SDL_GetWindowID(SDL_GetKeyboardFocus());
+ event.window.event = SDL_WINDOWEVENT_EXPOSED;
+ SDL_PushEvent(&event);
+}
+
+void IOS_SetActive(int active) {
+ AVAudioSession* session = AVAudioSession.sharedInstance;
+ if (!active) { Mix_Pause(-1); Mix_PauseMusic(); }
+
+ if (active) {
+  [session setCategory:AVAudioSessionCategoryAmbient mode:AVAudioSessionModeDefault
+               options:AVAudioSessionCategoryOptionMixWithOthers error:nil];
+  [session setActive:YES error:nil];
+ } else {
+  [session setActive:NO withOptions:AVAudioSessionSetActiveOptionNotifyOthersOnDeactivation error:nil];
+ }
+ if (active) { Mix_Resume(-1); Mix_ResumeMusic(); }
+}

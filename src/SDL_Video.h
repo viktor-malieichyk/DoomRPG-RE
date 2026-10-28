@@ -15,6 +15,7 @@ typedef struct SDLVideo_s
 	boolean displaySoftKeys;
 	int textSize; /* 0:100%, 1:75%, 2:60%, 3:50%. */
 	boolean wideText;
+    boolean hideHud;
 	int resolutionIndex;
 } SDLVideo_t;
 
