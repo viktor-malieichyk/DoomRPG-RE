@@ -11,10 +11,13 @@
 static BOOL ready, paused, importingSaves, exporting;
 static Uint8 touchKeys[SDL_NUM_SCANCODES];
 static UIViewController* host;
-static NSString* folder;
 static UIView* pinPad;
 static BOOL pinPadVisible;
 static BOOL pinPadVisibilityRequested;
+static NSString* GameFolder(void) {
+ NSString* documents=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES).firstObject;
+ return [documents stringByAppendingPathComponent:@"Game"];
+}
 @interface Mobile : NSObject <UIDocumentPickerDelegate>
 -(void)menu;
 -(void)pin:(UIButton*)button;
@@ -30,7 +33,8 @@ static void notice(NSString* message) {
 }
 static BOOL assetsReady(void) {
  NSFileManager* fm=NSFileManager.defaultManager;
- return [fm fileExistsAtPath:[folder stringByAppendingPathComponent:@"DoomRPG.zip"]] && [fm fileExistsAtPath:[folder stringByAppendingPathComponent:@"gm.sf2"]];
+ NSString* gameFolder=GameFolder();
+ return [fm fileExistsAtPath:[gameFolder stringByAppendingPathComponent:@"DoomRPG.zip"]] && [fm fileExistsAtPath:[gameFolder stringByAppendingPathComponent:@"gm.sf2"]];
 }
 @implementation Mobile
 -(void)down:(UIButton*)button { touchKeys[button.tag]=1; }
@@ -53,7 +57,7 @@ static BOOL assetsReady(void) {
 }
 -(void)exportSaves {
  NSError* error=nil;
- NSData* data=DRPGExportSave(folder,&error);
+ NSData* data=DRPGExportSave(GameFolder(),&error);
  if(!data) { notice(@"No complete saved game yet. Save using the in-game menu, then export again."); return; }
  NSURL* url=[NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:@"DoomRPG-save.doomsave"]];
  if(!data || ![data writeToURL:url options:NSDataWritingAtomic error:&error]) { notice(error.localizedDescription); return; }
@@ -88,8 +92,9 @@ static BOOL assetsReady(void) {
   [a addAction:[UIAlertAction actionWithTitle:@"Cancel" style:UIAlertActionStyleCancel handler:nil]];
   [a addAction:[UIAlertAction actionWithTitle:@"Import" style:UIAlertActionStyleDestructive handler:^(UIAlertAction* action){
    NSError* e=nil;
-   DRPGRestoreSave(files,folder,&e);
-   chdir(folder.fileSystemRepresentation);
+   NSString* gameFolder=GameFolder();
+   DRPGRestoreSave(files,gameFolder,&e);
+   chdir(gameFolder.fileSystemRepresentation);
    notice(e ? e.localizedDescription : @"Save imported. Tap Files, then Play, and choose Continue in the game.");
   }]]; [host presentViewController:a animated:YES completion:nil];
  } else {
@@ -102,7 +107,7 @@ static BOOL assetsReady(void) {
    NSData* data=size && size.unsignedLongLongValue<=64*1024*1024 ? [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&error] : nil;
    BOOL zip=[n.lowercaseString isEqual:@"doomrpg.zip"];
    BOOL valid=zip ? IOS_ValidateZip(data.bytes,data.length) : IOS_ValidateSoundfont(data.bytes,data.length);
-   if(valid && [data writeToFile:[folder stringByAppendingPathComponent:zip ? @"DoomRPG.zip" : @"gm.sf2"] options:NSDataWritingAtomic error:&error])copied++;
+   if(valid && [data writeToFile:[GameFolder() stringByAppendingPathComponent:zip ? @"DoomRPG.zip" : @"gm.sf2"] options:NSDataWritingAtomic error:&error])copied++;
    if(scoped)[url stopAccessingSecurityScopedResource];
   }
   notice(copied ? (assetsReady() ? @"Game data imported. Tap Files, then Play." : @"File imported. Import the other file before playing.") : @"Select DoomRPG.zip and/or a valid gm.sf2 soundfont in Files.");
@@ -122,10 +127,9 @@ void IOS_SetupStorage(void) {
  SDL_SetHint(SDL_HINT_AUDIO_CATEGORY,"ambient");
  SDL_SetHint(SDL_HINT_ORIENTATIONS,"LandscapeLeft LandscapeRight");
  IOS_SetActive(1);
- NSString* docs=NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask,YES).firstObject;
- folder=[docs stringByAppendingPathComponent:@"Game"];
- [NSFileManager.defaultManager createDirectoryAtPath:folder withIntermediateDirectories:YES attributes:nil error:nil];
- chdir(folder.fileSystemRepresentation);
+ NSString* gameFolder=GameFolder();
+ [NSFileManager.defaultManager createDirectoryAtPath:gameFolder withIntermediateDirectories:YES attributes:nil error:nil];
+ chdir(gameFolder.fileSystemRepresentation);
 }
 void IOS_Prepare(void) {
  SDL_SysWMinfo info; SDL_VERSION(&info.version); SDL_GetWindowWMInfo(SDL_GetKeyboardFocus(),&info);

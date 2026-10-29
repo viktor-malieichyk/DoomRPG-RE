@@ -18,6 +18,7 @@ NSDictionary* DRPGReadSave(NSData* data,NSError** error) {
  return files;
 }
 NSData* DRPGExportSave(NSString* folder,NSError** error) {
+ if (![folder isKindOfClass:NSString.class]) { invalid(error); return nil; }
  NSMutableDictionary* files=[NSMutableDictionary dictionary];
  for(NSString* n in saveNames()) {
   NSData* data=[NSData dataWithContentsOfFile:[folder stringByAppendingPathComponent:n] options:0 error:error];
@@ -28,6 +29,7 @@ NSData* DRPGExportSave(NSString* folder,NSError** error) {
  return DRPGReadSave(data,error) ? data : nil;
 }
 BOOL DRPGRestoreSave(NSDictionary* files,NSString* folder,NSError** error) {
+ if (![folder isKindOfClass:NSString.class]) { invalid(error); return NO; }
  // Revalidate even when called outside the document picker.
  NSData* archive=[NSPropertyListSerialization dataWithPropertyList:@{@"format":@1,@"files":files} format:NSPropertyListBinaryFormat_v1_0 options:0 error:error];
  if(!DRPGReadSave(archive,error))return NO;
