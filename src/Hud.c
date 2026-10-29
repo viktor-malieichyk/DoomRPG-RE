@@ -135,7 +135,7 @@ void Hud_drawBottomBar(Hud_t* hud)
         }
         SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
             CombatEntity_getHealth(ce), CombatEntity_getArmor(ce), ammo);
-        TextFields_draw(doomCanvas, stats, 4, 4, 0, 0, -1);
+        DoomCanvas_drawString1(doomCanvas, stats, 4, 4, 0);
         return;
     }
     dispW = doomCanvas->displayRect.w;
