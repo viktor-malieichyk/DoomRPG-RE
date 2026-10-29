@@ -265,7 +265,8 @@ void Hud_drawCompactStats(Hud_t* hud)
     SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
         CombatEntity_getHealth(player), CombatEntity_getArmor(player), ammo);
     canvas->fontColor = 0xffffffff;
-    DoomCanvas_drawString1(canvas, stats, 4, 4, 0);
+    DoomCanvas_drawString1(canvas, stats, canvas->displayRect.w / 2,
+        canvas->displayRect.h - 4, 18);
 }
 
 void Hud_drawEffects(Hud_t* hud)
