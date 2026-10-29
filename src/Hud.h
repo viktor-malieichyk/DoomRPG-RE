@@ -59,6 +59,7 @@ void Hud_addMessageForce(Hud_t* hud, char* str, boolean force);
 void Hud_calcMsgTime(Hud_t* hud);
 void Hud_drawBarTiles(Hud_t* hud, int x, int y, int width, boolean isLargerStatusBar);
 void Hud_drawBottomBar(Hud_t* hud);
+void Hud_drawCompactStats(Hud_t* hud);
 void Hud_drawEffects(Hud_t* hud);
 void Hud_drawTopBar(Hud_t* hud);
 void Hud_finishMessageBufferForce(Hud_t* hud, boolean force);

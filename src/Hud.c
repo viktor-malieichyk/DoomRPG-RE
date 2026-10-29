@@ -125,19 +125,7 @@ void Hud_drawBottomBar(Hud_t* hud)
 
     ce = &hud->doomRpg->player->ce;
     doomCanvas = hud->doomRpg->doomCanvas;
-    if (sdlVideo.compactUi) {
-        char stats[64];
-        char* ammo = "--";
-        if (hud->doomRpg->player->weapons && hud->doomRpg->player->weapon != 0) {
-            int type = hud->doomRpg->combat->weaponInfo[hud->doomRpg->player->weapon].ammoType;
-            SDL_snprintf(hud->ammoNum, sizeof(hud->ammoNum), "%d", hud->doomRpg->player->ammo[type]);
-            ammo = hud->ammoNum;
-        }
-        SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
-            CombatEntity_getHealth(ce), CombatEntity_getArmor(ce), ammo);
-        DoomCanvas_drawString1(doomCanvas, stats, 4, 4, 0);
-        return;
-    }
+    if (sdlVideo.compactUi) return;
     dispW = doomCanvas->displayRect.w;
     dispH = doomCanvas->displayRect.h;
     stbH = hud->statusBarHeight;
@@ -262,6 +250,22 @@ void Hud_drawBottomBar(Hud_t* hud)
 
     DoomCanvas_drawImage(doomCanvas, &hud->imgStatusArrow, hud->statusOrientationArrowXpos + cx, y - 3, 9);
     DoomCanvas_drawFont(doomCanvas, dir, hud->statusOrientationXpos + cx, y + 2, 9, 0, 1, hud->largeHud);
+}
+
+void Hud_drawCompactStats(Hud_t* hud)
+{
+    DoomCanvas_t* canvas = hud->doomRpg->doomCanvas;
+    CombatEntity_t* player = &hud->doomRpg->player->ce;
+    char stats[64];
+    char ammo[12] = "--";
+    if (hud->doomRpg->player->weapons && hud->doomRpg->player->weapon != 0) {
+        int type = hud->doomRpg->combat->weaponInfo[hud->doomRpg->player->weapon].ammoType;
+        SDL_snprintf(ammo, sizeof(ammo), "%d", hud->doomRpg->player->ammo[type]);
+    }
+    SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
+        CombatEntity_getHealth(player), CombatEntity_getArmor(player), ammo);
+    canvas->fontColor = 0xffffffff;
+    DoomCanvas_drawString1(canvas, stats, 4, 4, 0);
 }
 
 void Hud_drawEffects(Hud_t* hud)

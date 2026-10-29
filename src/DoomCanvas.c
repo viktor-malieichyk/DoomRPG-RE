@@ -3051,6 +3051,15 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 		DoomCanvas_drawString2(doomCanvas, doomCanvas->printMsg, 0, doomCanvas->doomRpg->hud->statusTopBarHeight, 0, -1);
 	}
 
+	if (sdlVideo.compactUi && (doomCanvas->state == ST_PLAYING ||
+		doomCanvas->state == ST_COMBAT || doomCanvas->state == ST_AUTOMAP ||
+		doomCanvas->state == ST_DIALOG || doomCanvas->state == ST_DIALOGPASSWORD ||
+		doomCanvas->state == ST_DYING || doomCanvas->state == ST_CAPTUREDOG ||
+		doomCanvas->state == ST_PARTICLE || doomCanvas->state == ST_BENCHMARK)) {
+		if (doomCanvas->doomRpg->graphSetCliping) DoomRPG_setClipFalse(doomCanvas->doomRpg);
+		Hud_drawCompactStats(doomCanvas->hud);
+	}
+
 	// New Code Lines
 	//{
 	if (doomCanvas->renderOnly && (doomCanvas->state == ST_PLAYING)) {
