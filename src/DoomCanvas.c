@@ -449,6 +449,7 @@ void DoomCanvas_dialogState(DoomCanvas_t* doomCanvas)
 	Hud_drawTopBar(doomCanvas->hud);
 	Hud_drawBottomBar(doomCanvas->hud);
 	Hud_drawEffects(doomCanvas->hud);
+	if (sdlVideo.compactUi) Hud_drawCompactStats(doomCanvas->hud);
 
 	if (doomCanvas->doomRpg->player->berserkerTics) {
 		// Bloqueo esta linea ya que hace que el color del berserk sea el doble de intenso, esto no sucede en la version J2ME
@@ -3053,7 +3054,6 @@ void DoomCanvas_run(DoomCanvas_t* doomCanvas)
 
 	if (sdlVideo.compactUi && (doomCanvas->state == ST_PLAYING ||
 		doomCanvas->state == ST_COMBAT || doomCanvas->state == ST_AUTOMAP ||
-		doomCanvas->state == ST_DIALOG || doomCanvas->state == ST_DIALOGPASSWORD ||
 		doomCanvas->state == ST_DYING || doomCanvas->state == ST_CAPTUREDOG ||
 		doomCanvas->state == ST_PARTICLE || doomCanvas->state == ST_BENCHMARK)) {
 		if (doomCanvas->doomRpg->graphSetCliping) DoomRPG_setClipFalse(doomCanvas->doomRpg);
