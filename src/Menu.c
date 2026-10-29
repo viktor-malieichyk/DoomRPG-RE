@@ -1810,7 +1810,8 @@ int Menu_select(Menu_t* menu, int menuId, int itemId)
 			if (menuSystem->items[itemId].action != 0) {
 				return MENU_NONE;
 			}
-			menu->f708b = 0;
+			/* Skip Back and the ITEMS divider when opening the vendor list. */
+			menu->f708b = 2;
 			menu->f702a = 0;
 			return MENU_STORE;
 			break;
