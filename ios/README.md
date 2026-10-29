@@ -99,6 +99,8 @@ iCloud transfer and device installation require testing on your signed-in device
 Audio uses the ambient mixing session and does not mute or lower other apps.
 Switching away suspends game audio; returning restores the scene layout and audio context.
 
-Options > HUD panels hides or shows both status panels and the softkey strip.
-Desktop builds also support F2 to toggle them; iOS has no extra touch button.
-\nPassword terminals show an on-screen numeric keypad while requesting a PIN.\n
+Options > Compact UI shows only the player's HP, armor, and ammo, and hides the
+status panels and softkey strip. Desktop builds also support F2 to toggle it.
+
+
+Password terminals show an on-screen numeric keypad while requesting a PIN.

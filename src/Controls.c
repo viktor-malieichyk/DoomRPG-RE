@@ -197,7 +197,7 @@ void Controls_paint(MenuSystem_t* menu)
     #ifdef DOOMRPG_IOS
     DoomCanvas_drawString1(canvas, "D-pad/Arrows move", width / 2, 17, 16);
 #else
-    DoomCanvas_drawString1(canvas, "F2: toggle HUD", width / 2, 17, 16);
+    DoomCanvas_drawString1(canvas, "F2: toggle compact UI", width / 2, 17, 16);
 #endif
     for (int index = menu->scrollIndex; index < menu->numItems && index < menu->scrollIndex + menu->maxItems; ++index) {
         int y = 34 + (index - menu->scrollIndex) * 28;

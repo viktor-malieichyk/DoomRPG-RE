@@ -127,7 +127,7 @@ static void GameFrame(void* unused)
                 case SDL_KEYDOWN:
 #ifndef DOOMRPG_IOS
                     if (ev.key.keysym.scancode == SDL_SCANCODE_F2 && !ev.key.repeat && !doomRpg->menuSystem->setBind) {
-                        if (VideoOptions_toggleHud(doomRpg)) Game_saveConfig(doomRpg->game, 0);
+                        if (VideoOptions_toggleCompactUi(doomRpg)) Game_saveConfig(doomRpg->game, 0);
                     }
 #endif
                     if (ev.key.keysym.scancode == SDL_SCANCODE_F1 && !ev.key.repeat && !doomRpg->menuSystem->setBind)

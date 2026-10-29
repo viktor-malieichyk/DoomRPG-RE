@@ -16,7 +16,7 @@ typedef struct SDLVideo_s
 	int textSize; /* 0:100%, 1:75%, 2:60%, 3:50%. */
 	int textFieldWidth;
     boolean wideText;
-    boolean hideHud;
+    boolean compactUi;
 	int resolutionIndex;
 } SDLVideo_t;
 

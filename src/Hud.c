@@ -111,7 +111,6 @@ void Hud_drawBarTiles(Hud_t* hud, int x, int y, int width, boolean isLargerStatu
 
 void Hud_drawBottomBar(Hud_t* hud)
 {
-    if (sdlVideo.hideHud) return;
     Image_t* img;
     DoomCanvas_t* doomCanvas;
     CombatEntity_t* ce;
@@ -126,6 +125,19 @@ void Hud_drawBottomBar(Hud_t* hud)
 
     ce = &hud->doomRpg->player->ce;
     doomCanvas = hud->doomRpg->doomCanvas;
+    if (sdlVideo.compactUi) {
+        char stats[64];
+        char* ammo = "--";
+        if (hud->doomRpg->player->weapons && hud->doomRpg->player->weapon != 0) {
+            int type = hud->doomRpg->combat->weaponInfo[hud->doomRpg->player->weapon].ammoType;
+            SDL_snprintf(hud->ammoNum, sizeof(hud->ammoNum), "%d", hud->doomRpg->player->ammo[type]);
+            ammo = hud->ammoNum;
+        }
+        SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
+            CombatEntity_getHealth(ce), CombatEntity_getArmor(ce), ammo);
+        TextFields_draw(doomCanvas, stats, 4, 4, 0, 0, -1);
+        return;
+    }
     dispW = doomCanvas->displayRect.w;
     dispH = doomCanvas->displayRect.h;
     stbH = hud->statusBarHeight;
@@ -315,7 +327,7 @@ void Hud_drawEffects(Hud_t* hud)
 
 void Hud_drawTopBar(Hud_t* hud)
 {
-    if (sdlVideo.hideHud) return;
+    if (sdlVideo.compactUi) return;
     DoomCanvas_t* doomCanvas;
     char* text;
     int len;
@@ -439,7 +451,7 @@ void Hud_startup(Hud_t* hud, boolean largeStatus)
 	doomRpg = hud->doomRpg;
 
 	hud->msgMaxChars = (int)((doomRpg->doomCanvas->displayRect.w - 4) / (7 * TextFields_scale()));
-	hud->statusTopBarHeight = sdlVideo.hideHud ? 0 : 20;
+	hud->statusTopBarHeight = sdlVideo.compactUi ? 0 : 20;
     DoomRPG_createImage(doomRpg, "bar_lg.bmp", false, &hud->imgStatusBarLarge);
     DoomRPG_createImage(doomRpg, "k.bmp", false, &hud->imgStatusBar);
     DoomRPG_createImage(doomRpg, "n.bmp", true, &hud->imgAttArrow);
@@ -473,7 +485,7 @@ void Hud_startup(Hud_t* hud, boolean largeStatus)
         hud->statusHealthXpos = 2;
         height = hud->imgStatusBarLarge.height;
     }
-    hud->statusBarHeight = sdlVideo.hideHud ? 0 : height;
+    hud->statusBarHeight = sdlVideo.compactUi ? 0 : height;
 
     hud->hudFaceWidth = hud->imgHudFaces.width;
     hud->hudFaceHeight = (hud->imgHudFaces.height / 9);

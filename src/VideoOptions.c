@@ -102,11 +102,11 @@ boolean VideoOptions_mobileLayout(DoomRPG_t* game)
 }
 #endif
 
-boolean VideoOptions_toggleHud(DoomRPG_t* game)
+boolean VideoOptions_toggleCompactUi(DoomRPG_t* game)
 {
-    sdlVideo.hideHud = !sdlVideo.hideHud;
+    sdlVideo.compactUi = !sdlVideo.compactUi;
     if (!resizeFramebuffer(game, sdlVideo.resolutionIndex, sdlVideo.rendererW, sdlVideo.rendererH)) {
-        sdlVideo.hideHud = !sdlVideo.hideHud;
+        sdlVideo.compactUi = !sdlVideo.compactUi;
         return false;
     }
     return true;

@@ -1366,7 +1366,7 @@ void DoomCanvas_drawScrollBar(DoomCanvas_t* doomCanvas, int y, int totalHeight, 
 
 void DoomCanvas_drawSoftKeys(DoomCanvas_t* doomCanvas, char* softKeyLeft, char* softKeyRight)
 {
-    if (sdlVideo.hideHud) return;
+    if (sdlVideo.compactUi) return;
 	int x, y, x1, y1;
 
 	if (doomCanvas->displaySoftKeys) {
@@ -3361,7 +3361,7 @@ void DoomCanvas_layout(DoomCanvas_t* doomCanvas)
 
 	height = (displayH - (doomRpg->hud->statusBarHeight) - (doomRpg->hud->statusTopBarHeight));
 
-	if (sdlVideo.displaySoftKeys && !sdlVideo.hideHud) { // <- New line Code
+	if (sdlVideo.displaySoftKeys && !sdlVideo.compactUi) { // <- New line Code
 		if (clipH >= 148) {
 			deltaH = clipH - displayH;
 			if (deltaH < 20) {
