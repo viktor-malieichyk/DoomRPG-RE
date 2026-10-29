@@ -255,18 +255,37 @@ void Hud_drawBottomBar(Hud_t* hud)
 void Hud_drawCompactStats(Hud_t* hud)
 {
     DoomCanvas_t* canvas = hud->doomRpg->doomCanvas;
-    CombatEntity_t* player = &hud->doomRpg->player->ce;
-    char stats[64];
-    char ammo[12] = "--";
-    if (hud->doomRpg->player->weapons && hud->doomRpg->player->weapon != 0) {
-        int type = hud->doomRpg->combat->weaponInfo[hud->doomRpg->player->weapon].ammoType;
-        SDL_snprintf(ammo, sizeof(ammo), "%d", hud->doomRpg->player->ammo[type]);
+    Player_t* player = hud->doomRpg->player;
+    char health[8], armor[8], ammo[12] = "--";
+    int ammoIconRow = 2;
+    int gap = 10;
+    int iconWidth = hud->iconSheetWidth;
+    int iconHeight = hud->iconSheetHeight;
+    int widths[3], totalWidth, x, centerY;
+    char* values[3] = { health, armor, ammo };
+    int iconRows[3] = { 0, 1, 2 };
+
+    SDL_snprintf(health, sizeof(health), "%d", CombatEntity_getHealth(&player->ce));
+    SDL_snprintf(armor, sizeof(armor), "%d", CombatEntity_getArmor(&player->ce));
+    if (player->weapons && player->weapon != 0) {
+        int type = hud->doomRpg->combat->weaponInfo[player->weapon].ammoType;
+        SDL_snprintf(ammo, sizeof(ammo), "%d", player->ammo[type]);
+        ammoIconRow = type + 3;
     }
-    SDL_snprintf(stats, sizeof(stats), "HP %d  AR %d  AM %s",
-        CombatEntity_getHealth(player), CombatEntity_getArmor(player), ammo);
+    iconRows[2] = ammoIconRow;
+    for (int i = 0; i < 3; ++i)
+        widths[i] = iconWidth + 3 + (int)SDL_strlen(values[i]) * 7;
+    totalWidth = widths[0] + widths[1] + widths[2] + gap * 2;
+    x = (canvas->displayRect.w - totalWidth) / 2;
+    centerY = canvas->displayRect.h - 4 - iconHeight / 2;
     canvas->fontColor = 0xffffffff;
-    DoomCanvas_drawString1(canvas, stats, canvas->displayRect.w / 2,
-        canvas->displayRect.h - 4, 18);
+
+    for (int i = 0; i < 3; ++i) {
+        DoomCanvas_drawImageSpecial(canvas, &hud->imgIconSheet, 0, iconRows[i] * iconHeight,
+            iconWidth, iconHeight, 0, x, centerY, 32);
+        DoomCanvas_drawString1(canvas, values[i], x + iconWidth + 3, centerY, 32);
+        x += widths[i] + gap;
+    }
 }
 
 void Hud_drawEffects(Hud_t* hud)
